@@ -156,11 +156,18 @@ export class Sfx {
       src.connect(f).connect(this.crowdGain).connect(this.master);
       src.start();
     }
-    this.crowdGain.gain.setTargetAtTime(this.enabled ? level : 0, this.ctx.currentTime, 0.6);
+    this.crowdLevel = level;
+    this.crowdGain.gain.setTargetAtTime(this.enabled && this.hall ? level : 0, this.ctx.currentTime, 0.6);
   }
 
   setEnabled(on) {
     this.enabled = on;
-    if (this.crowdGain) this.crowdGain.gain.setTargetAtTime(on ? 0.04 : 0, this.ctx.currentTime, 0.2);
+    if (this.crowdGain) this.crowdGain.gain.setTargetAtTime(on && this.hall ? this.crowdLevel ?? 0.04 : 0, this.ctx.currentTime, 0.2);
+  }
+
+  /** The constant hall murmur is optional — on laptop speakers it sounds like hiss. */
+  setHall(on) {
+    this.hall = on;
+    this.setEnabled(this.enabled);
   }
 }

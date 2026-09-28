@@ -31,6 +31,7 @@ export class FightScreen extends Screen {
     app.tracker.setMode('active');
     app.tracker.warnGuard = true;
     app.sfx.crowd(0.05);
+    app.music.setLevel(0.15);
 
     this.me = new Fighter({ name: app.settings.name, corner: 'red' });
     this.foe = new Fighter({ name: this.online ? params.foeName : 'Тень', corner: 'blue' });
@@ -399,5 +400,6 @@ export class FightScreen extends Screen {
     app.stage.fx.clear();
     app.stage.setHead(0, 0);
     app.sfx.crowd(0.035);
+    app.music.setLevel(0.3);
   }
 }

@@ -5,6 +5,7 @@ import { PoseAnimator } from './render/animator.js';
 import { MotionTracker } from './motion/tracker.js';
 import { Coach } from './game/coach.js';
 import { Sfx } from './audio/sfx.js';
+import { Music } from './audio/music.js';
 import { Voice } from './audio/voice.js';
 import { HandCursor } from './ui/hand-cursor.js';
 import { CameraSource, PuppetSource } from './vision/sources.js';
@@ -13,7 +14,7 @@ import { SCREENS } from './ui/screens/index.js';
 import { DebugPanel } from './ui/debug.js';
 import { load, save } from './util/store.js';
 
-const DEFAULTS = { name: '', stance: 'orthodox', sensitivity: 'normal', sound: true, voice: true, model: 'lite', shareCam: true, graphics: 'auto' };
+const DEFAULTS = { name: '', stance: 'orthodox', sensitivity: 'normal', sound: true, music: true, hall: false, voice: true, model: 'lite', shareCam: true, graphics: 'auto' };
 const FIRST = ['Тихий', 'Быстрый', 'Железный', 'Хитрый', 'Бешеный', 'Ночной', 'Левый', 'Точный'];
 const SECOND = ['Джеб', 'Хук', 'Кулак', 'Апперкот', 'Нырок', 'Уклон', 'Кросс', 'Клинч'];
 
@@ -47,6 +48,8 @@ export class App {
     this.#setupAutoQuality();
     this.sfx = new Sfx();
     this.sfx.enabled = this.settings.sound;
+    this.sfx.hall = this.settings.hall;
+    this.music = new Music(this.sfx);
     this.voice = new Voice();
     this.voice.enabled = this.settings.voice;
     this.tracker = new MotionTracker({ stance: this.settings.stance, sensitivity: this.settings.sensitivity });
@@ -96,6 +99,7 @@ export class App {
   startInput() {
     this.sfx.unlock();
     this.sfx.crowd(0.035);
+    this.#applyMusic();
     if (this.inputStarted) return this.inputStarted;
     const onFrame = (frame) => {
       this.tracker.luma = this.input.luma;
@@ -108,6 +112,12 @@ export class App {
       throw e;
     });
     return this.inputStarted;
+  }
+
+  #applyMusic() {
+    if (!this.sfx.ctx) return; // audio unlocks on the first click
+    if (this.settings.music && this.settings.sound) this.music.start();
+    else this.music.stop();
   }
 
   go(name, params = {}) {
@@ -127,6 +137,8 @@ export class App {
     this.tracker.stance = s.stance;
     this.tracker.setSensitivity(s.sensitivity);
     this.sfx.setEnabled(s.sound);
+    this.sfx.setHall(s.hall);
+    this.#applyMusic();
     this.voice.enabled = s.voice;
     if (!s.voice) this.voice.stop();
     if ('graphics' in patch) {

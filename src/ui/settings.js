@@ -45,6 +45,8 @@ export function openSettings(app) {
       ),
     ),
     h('label.field', 'Звук', h('input', { type: 'checkbox', checked: s.sound, onchange: (e) => set({ sound: e.target.checked }) })),
+    h('label.field', 'Музыка', h('input', { type: 'checkbox', checked: s.music, onchange: (e) => set({ music: e.target.checked }) })),
+    h('label.field', 'Шум зала (гул зрителей)', h('input', { type: 'checkbox', checked: s.hall, onchange: (e) => set({ hall: e.target.checked }) })),
     h(
       'label.field',
       app.voice.available ? 'Голос тренера' : 'Голос тренера (нет русского голоса в системе)',
