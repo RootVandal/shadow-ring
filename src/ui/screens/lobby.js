@@ -33,7 +33,9 @@ export class LobbyScreen extends Screen {
           h(
             'div',
             h('h1.menu__title', 'Онлайн-бой'),
-            h('p.muted', { style: { marginTop: '10px', maxWidth: '60ch' } }, 'Три раунда, у обоих по 100 HP. Сопернику уходит только твой скелет — 13 точек, не видео.'),
+            h('p.muted', { style: { marginTop: '10px', maxWidth: '60ch' } }, app.settings.shareCam
+                ? 'Три раунда, у обоих по 100 HP. Соперник видит твою камеру — выключить можно в настройках.'
+                : 'Три раунда, у обоих по 100 HP. Камера скрыта: сопернику уходит только скелет — 13 точек.'),
           ),
         ),
         this.body,
@@ -156,7 +158,8 @@ export class LobbyScreen extends Screen {
     const { app } = this;
     this.handedOff = true;
     this.tick = null;
-    const link = new RemoteLink({ wire, role });
+    const stream = app.settings.shareCam ? (app.input?.cam?.stream ?? null) : null;
+    const link = new RemoteLink({ wire, role, stream });
     const foeName = String(hello.name || 'Соперник').slice(0, 18);
     app.sfx.bell(1);
     this.#view(

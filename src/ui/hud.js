@@ -79,7 +79,7 @@ export class Hud {
     const phase = match.phase;
     const left = match.timeLeft(now) / 1000;
     this.round.textContent =
-      phase === 'round' ? `раунд ${match.round} / ${match.rules.rounds}` : phase === 'break' ? 'угол' : phase === 'intro' ? 'представление' : phase === 'over' ? 'бой окончен' : 'ждём';
+      phase === 'round' ? `раунд ${match.round} / ${match.rules.rounds}${match.rules.roundKo ? ` · ${match.wins.me}:${match.wins.foe}` : ''}` : phase === 'break' ? 'угол' : phase === 'intro' ? 'представление' : phase === 'over' ? 'бой окончен' : 'ждём';
     this.time.textContent = phase === 'waiting' || phase === 'over' ? '—' : mmss(left);
     this.clock.classList.toggle('is-last', phase === 'round' && left <= 10);
     if (rtt != null) this.net.textContent = `пинг ${Math.round(rtt)} мс`;

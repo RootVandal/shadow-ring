@@ -18,6 +18,10 @@ import { CONFIG } from '../config.js';
  *                 finishRemote(result, now)         their KO / verdict / forfeit
  * Match → link:   sendAttack, sendResult, sendState, sendPhase, sendEnd, update, shift
  *
+ * With `rules.roundKo` (online) a knockout ends only the round: the authority
+ * scores it, and after the break both sides start again at full HP
+ * (`rules.resetHp`). The fight goes the distance and most rounds won takes it.
+ *
  * Events: phase, knock, outgoing, incoming, defended, landed, pause, over
  */
 export class Match extends Emitter {
@@ -49,6 +53,9 @@ export class Match extends Emitter {
     this.knocked = false;
     this.stateIn = 0;
     this.result = null;
+    this.wins = { me: 0, foe: 0 };
+    this.lastRound = null; // {winner, method} of the round that just ended
+    this.roundOver = false; // someone is down, waiting for the bell
     link.attach(this);
   }
 
@@ -92,7 +99,7 @@ export class Match extends Emitter {
    * @param {{kind:string, side:string, quality:number, speed?:number}} ev
    */
   throwPunch(ev, now) {
-    if (this.phase !== 'round' || this.paused) return null;
+    if (this.phase !== 'round' || this.paused || this.roundOver) return null;
     const { tired } = this.me.spend(ev.kind, now);
     const counter = now - this.lastDodgeAt <= this.rules.counterWindowMs;
     if (counter) this.lastDodgeAt = -Infinity;
@@ -115,7 +122,7 @@ export class Match extends Emitter {
   // ── called by the link ────────────────────────────────────────────────
 
   incoming(attack, windowMs, now) {
-    if (this.phase !== 'round') return;
+    if (this.phase !== 'round' || this.roundOver) return;
     const impactAt = now + windowMs;
     this.incomingQ.push({ attack, impactAt });
     this.emit('incoming', { attack, impactAt, windowMs });
@@ -125,9 +132,11 @@ export class Match extends Emitter {
     const p = this.pending.get(result.id);
     if (!p) return;
     this.pending.delete(result.id);
+    // A late result must not undo the HP reset of the next round.
+    if (this.rules.resetHp && this.phase !== 'round') return;
     if (Number.isFinite(result.hp)) this.foe.hp = result.hp;
     this.emit('landed', { attack: p.attack, ...result });
-    if (result.hp <= 0) this.#finish({ winner: 'me', method: 'ko' }, now);
+    if (result.hp <= 0) this.#knockout('me', now);
   }
 
   foeState({ hp, stamina }) {
@@ -135,8 +144,10 @@ export class Match extends Emitter {
     if (Number.isFinite(stamina)) this.foe.stamina = stamina;
   }
 
-  applyPhase({ phase, round, ms }, now) {
+  applyPhase({ phase, round, ms, wins, last }, now) {
     if (this.authority || this.phase === 'over') return;
+    if (wins) this.wins = { me: wins.me, foe: wins.foe };
+    if (last) this.lastRound = last;
     const lag = (this.link.rtt ?? 0) / 2;
     this.#enter(phase, round, now, Math.max(0, ms - lag));
   }
@@ -179,13 +190,33 @@ export class Match extends Emitter {
     const used = def.slip ? 'slip' : def.duck ? 'duck' : def.guard === 'open' ? 'none' : 'guard';
     this.link.sendResult({ id: inc.attack.id, outcome: res.outcome, damage: res.damage, hp: this.me.hp, defense: used }, now);
     this.emit('defended', { attack: inc.attack, ...res, def, hp: this.me.hp });
-    if (this.me.down) this.#finish({ winner: 'foe', method: 'ko' }, now);
+    if (this.me.down) this.#knockout('foe', now);
+  }
+
+  #knockout(winner, now) {
+    if (!this.rules.roundKo) {
+      this.#finish({ winner, method: 'ko' }, now);
+      return;
+    }
+    if (this.phase !== 'round' || this.roundOver) return;
+    this.roundOver = true;
+    this.incomingQ.length = 0;
+    // The follower waits for the host's bell; the host scores the round.
+    if (this.authority) this.#endRound(winner, 'ko', now);
+  }
+
+  #endRound(winner, method, now) {
+    if (winner === 'me' || winner === 'foe') this.wins[winner]++;
+    this.lastRound = { winner, method };
+    if (this.round < this.rules.rounds) this.#enter('break', this.round, now);
+    else this.#decide(now);
   }
 
   #advance(now) {
     if (this.phase === 'intro') this.#enter('round', 1, now);
     else if (this.phase === 'round') {
-      if (this.round < this.rules.rounds) this.#enter('break', this.round, now);
+      if (this.rules.roundKo) this.#endRound(this.#hpLeader(), 'points', now);
+      else if (this.round < this.rules.rounds) this.#enter('break', this.round, now);
       else this.#decide(now);
     } else if (this.phase === 'break') this.#enter('round', this.round + 1, now);
   }
@@ -197,20 +228,39 @@ export class Match extends Emitter {
     this.round = round;
     this.endsAt = now + ms;
     this.knocked = false;
+    this.roundOver = false;
     if (phase === 'break') {
       this.incomingQ.length = 0;
-      this.me.heal(this.rules.breakHeal);
-      if (this.link.local) this.foe.heal(this.rules.breakHeal);
+      if (!this.rules.resetHp) {
+        this.me.heal(this.rules.breakHeal);
+        if (this.link.local) this.foe.heal(this.rules.breakHeal);
+      }
       this.me.stamina = CONFIG.fight.stamina.max;
     }
-    if (this.authority) this.link.sendPhase?.({ phase, round, ms });
-    this.emit('phase', { phase, round, endsAt: this.endsAt, ms });
+    if (phase === 'round' && this.rules.resetHp && round > 1) {
+      this.me.reset();
+      this.foe.reset();
+    }
+    if (this.authority) {
+      const extra = this.rules.roundKo ? { wins: { ...this.wins }, last: this.lastRound } : {};
+      this.link.sendPhase?.({ phase, round, ms, ...extra });
+    }
+    this.emit('phase', { phase, round, endsAt: this.endsAt, ms, wins: { ...this.wins }, last: this.lastRound });
+  }
+
+  #hpLeader() {
+    const a = Math.round(this.me.hp);
+    const b = Math.round(this.foe.hp);
+    return a > b ? 'me' : a < b ? 'foe' : 'draw';
   }
 
   #decide(now) {
-    const a = Math.round(this.me.hp);
-    const b = Math.round(this.foe.hp);
-    this.#finish({ winner: a > b ? 'me' : a < b ? 'foe' : 'draw', method: 'points' }, now);
+    if (this.rules.roundKo) {
+      const { me, foe } = this.wins;
+      this.#finish({ winner: me > foe ? 'me' : me < foe ? 'foe' : 'draw', method: 'rounds', wins: { ...this.wins } }, now);
+      return;
+    }
+    this.#finish({ winner: this.#hpLeader(), method: 'points' }, now);
   }
 
   #finish(result, now) {

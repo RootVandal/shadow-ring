@@ -3,16 +3,28 @@ import { clamp, lerp } from '../util/math.js';
 import { JOINTS, JOINT_NAMES } from '../vision/landmarks.js';
 import { GUARD } from '../render/poses.js';
 import { PUNCH_KINDS } from '../game/rules.js';
+import { VideoLink } from './video.js';
 import { CONFIG } from '../config.js';
 
 // The remote player as a Match link. What travels over the wire:
-//   pose  13 skeleton joints in cm + slip/duck offsets, 20× per second — never video
+//   pose  13 skeleton joints in cm + slip/duck offsets, 20× per second
+//   video the webcam itself goes as a WebRTC track, if the player allows it (net/video.js)
 //   atk   my punch (kind, power, how long the defender has to react)
 //   res   how their punch landed on me (I'm the authority over my own HP)
 //   st    my HP and stamina, 5× per second
 //   ph    round clock (host → guest), end — the verdict, ready / again — handshakes
 
-const flip = (r) => ({ ...r, winner: r.winner === 'me' ? 'foe' : r.winner === 'foe' ? 'me' : r.winner });
+const flipWinner = (w) => (w === 'me' ? 'foe' : w === 'foe' ? 'me' : w);
+const count = (n) => clamp(Math.floor(Number(n)) || 0, 0, 9);
+/** Round score as the other side sent it ({me, foe} from their seat) → ours. */
+const flipWins = (w) => (w && typeof w === 'object' ? { me: count(w.foe), foe: count(w.me) } : undefined);
+const flip = (r) => ({ ...r, winner: flipWinner(r.winner), ...(r.wins ? { wins: flipWins(r.wins) } : {}) });
+
+function flipLast(last) {
+  if (!last || typeof last !== 'object') return undefined;
+  const winner = ['me', 'foe', 'draw'].includes(last.winner) ? flipWinner(last.winner) : 'draw';
+  return { winner, method: last.method === 'ko' ? 'ko' : 'points' };
+}
 
 /** Skeleton → compact integers (cm), in avatar space. */
 export function packPose(frame, def = {}) {
@@ -59,8 +71,8 @@ function sanitizeAttack(a) {
 }
 
 export class RemoteLink extends Emitter {
-  /** @param {{wire: import('./peer.js').Wire, role: 'host'|'guest'}} o */
-  constructor({ wire, role }) {
+  /** @param {{wire: import('./peer.js').Wire, role: 'host'|'guest', stream?: MediaStream|null}} o */
+  constructor({ wire, role, stream = null }) {
     super();
     this.local = false;
     this.wire = wire;
@@ -71,6 +83,7 @@ export class RemoteLink extends Emitter {
     this.readyWaiters = [];
     this.gone = false;
     this.fallback = { joints: structuredClone(GUARD), lateral: 0, drop: 0 };
+    this.video = new VideoLink({ wire, polite: role === 'guest', stream });
 
     const now = () => performance.now();
     wire.on('atk', (m) => {
@@ -83,7 +96,9 @@ export class RemoteLink extends Emitter {
       this.match?.landed({ id: Number(m.r.id), outcome, damage: clamp(Number(m.r.damage) || 0, 0, 30), hp: clamp(Number(m.r.hp), 0, 100) }, now());
     });
     wire.on('st', (m) => this.match?.foeState({ hp: clamp(Number(m.hp), 0, 100), stamina: clamp(Number(m.stamina), 0, 100) }));
-    wire.on('ph', (m) => this.match?.applyPhase({ phase: m.phase, round: m.round, ms: clamp(Number(m.ms) || 0, 0, 120000) }, now()));
+    wire.on('ph', (m) =>
+      this.match?.applyPhase({ phase: m.phase, round: m.round, ms: clamp(Number(m.ms) || 0, 0, 120000), wins: flipWins(m.wins), last: flipLast(m.last) }, now()),
+    );
     wire.on('end', (m) => m.r && this.match?.finishRemote(flip(m.r), now()));
     wire.on('pose', (m) => this.#pose(m));
     wire.on('ready', () => {
