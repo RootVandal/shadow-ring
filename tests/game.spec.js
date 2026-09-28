@@ -9,6 +9,7 @@ import { scoreOf, leaderboard } from '../src/game/records.js';
 import { mulberry32 } from '../src/util/math.js';
 import { CONFIG } from '../src/config.js';
 import { GLOVES, hashCode, TITLES, titleById } from '../src/game/shop.js';
+import { voiceScore } from '../src/audio/voice.js';
 
 const OPEN = { guard: 'open', slip: false, duck: false };
 const FULL = { guard: 'full', slip: false, duck: false };
@@ -399,4 +400,13 @@ test('shop: five titles with their prices; an unknown title from the opponent is
   assert.equal(titleById('vip').name, 'VIP золотой');
   assert.equal(titleById('<script>'), null);
   assert.equal(titleById(undefined), null);
+});
+
+test('voice: the nicest Russian voice wins over the robotic Windows ones', () => {
+  const names = ['Microsoft Irina - Russian (Russia)', 'Google русский', 'Microsoft Svetlana Online (Natural) - Russian (Russia)', 'Milena', 'Microsoft Pavel - Russian (Russia)'];
+  const best = [...names].sort((a, b) => voiceScore({ name: b }) - voiceScore({ name: a }));
+  assert.equal(best[0], 'Microsoft Svetlana Online (Natural) - Russian (Russia)');
+  assert.equal(best[1], 'Google русский');
+  assert.equal(best[2], 'Milena');
+  assert.ok(voiceScore({ name: 'Microsoft Irina - Russian (Russia)' }) < voiceScore({ name: 'Google русский' }));
 });

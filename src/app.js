@@ -14,7 +14,7 @@ import { SCREENS } from './ui/screens/index.js';
 import { DebugPanel } from './ui/debug.js';
 import { load, save } from './util/store.js';
 
-const DEFAULTS = { name: '', stance: 'orthodox', sensitivity: 'normal', sound: true, music: true, hall: false, voice: true, model: 'lite', shareCam: true, graphics: 'auto' };
+const DEFAULTS = { name: '', stance: 'orthodox', sensitivity: 'normal', sound: true, music: true, hall: false, voice: true, voiceName: '', model: 'lite', shareCam: true, graphics: 'auto' };
 const FIRST = ['Тихий', 'Быстрый', 'Железный', 'Хитрый', 'Бешеный', 'Ночной', 'Левый', 'Точный'];
 const SECOND = ['Джеб', 'Хук', 'Кулак', 'Апперкот', 'Нырок', 'Уклон', 'Кросс', 'Клинч'];
 
@@ -52,6 +52,7 @@ export class App {
     this.music = new Music(this.sfx);
     this.voice = new Voice();
     this.voice.enabled = this.settings.voice;
+    this.voice.setPreferred(this.settings.voiceName);
     this.tracker = new MotionTracker({ stance: this.settings.stance, sensitivity: this.settings.sensitivity });
     this.coach = new Coach({ voice: this.voice });
     this.cursor = new HandCursor();
@@ -140,6 +141,7 @@ export class App {
     this.sfx.setHall(s.hall);
     this.#applyMusic();
     this.voice.enabled = s.voice;
+    this.voice.setPreferred(s.voiceName);
     if (!s.voice) this.voice.stop();
     if ('graphics' in patch) {
       if (s.graphics !== 'auto') this.#applyTier(s.graphics);

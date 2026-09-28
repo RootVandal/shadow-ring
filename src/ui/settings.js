@@ -52,6 +52,17 @@ export function openSettings(app) {
       app.voice.available ? 'Голос тренера' : 'Голос тренера (нет русского голоса в системе)',
       h('input', { type: 'checkbox', checked: s.voice, disabled: !app.voice.available, onchange: (e) => set({ voice: e.target.checked }) }),
     ),
+    // Какой из русских голосов системы. Выбрал — тренер сразу говорит пробную фразу.
+    app.voice.voices.length > 1
+      ? h(
+          'label.field',
+          'Какой голос',
+          select(s.voiceName, [['', 'Авто — самый приятный'], ...app.voice.voices.map((v) => [v.name, v.name])], (v) => {
+            set({ voiceName: v });
+            app.voice.say('Руки к лицу. Работаем!', { interrupt: true });
+          }),
+        )
+      : null,
     h('div', { style: { marginTop: '14px', textAlign: 'right' } }, h('button.btn.btn--small', { onclick: () => card.remove() }, 'Готово')),
   );
   document.body.append(card);
