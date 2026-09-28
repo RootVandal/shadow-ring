@@ -9,9 +9,14 @@ import { expAlpha } from '../util/math.js';
 // should be — the fix, drawn in the world rather than written in a label.
 
 const HOME = { left: new THREE.Vector3(-0.15, -0.21, -0.4), right: new THREE.Vector3(0.15, -0.21, -0.4) };
-// While aiming the prank pistol the fists hold it in the middle of the view.
-const GRIP = { left: new THREE.Vector3(-0.055, -0.27, -0.5), right: new THREE.Vector3(0.055, -0.27, -0.5) };
-const MUZZLE = new THREE.Vector3(0.02, -0.14, -0.6);
+// The pistol aims here (camera space): at the opponent's head, not wherever the glove points.
+const AIM_AT = new THREE.Vector3(0, -0.05, -2.2);
+const ORIGIN = new THREE.Vector3();
+const UP = new THREE.Vector3(0, 1, 0);
+const tmpM = new THREE.Matrix4();
+const tmpQ = new THREE.Quaternion();
+const kickQ = new THREE.Quaternion();
+const X_AXIS = new THREE.Vector3(1, 0, 0);
 const STRIKE = { left: new THREE.Vector3(-0.03, -0.02, -1.05), right: new THREE.Vector3(0.03, -0.02, -1.05) };
 
 export class FirstPersonGloves {
@@ -40,14 +45,16 @@ export class FirstPersonGloves {
       this.snap[side] = null;
     }
     this.t = 0;
+    // The prank pistol rides on top of the right glove, barrel along the knuckles.
     this.pistol = makePistol();
-    this.pistol.scale.setScalar(1.05);
+    this.pistol.position.set(0, 0.075, 0.03);
+    this.pistol.scale.setScalar(0.85);
     this.pistol.visible = false;
-    this.group.add(this.pistol);
+    this.gloves.right.add(this.pistol);
     this.gun = false;
   }
 
-  /** The prank pistol between the gloves while the player aims. */
+  /** The prank pistol in the right glove for the whole fight. */
   setGun(on) {
     this.gun = on;
   }
@@ -96,10 +103,6 @@ export class FirstPersonGloves {
         target.x *= 1 - 0.55 * Math.min(1, E);
         target.y += E * 0.09;
       }
-      if (this.gun) {
-        target.copy(GRIP[side]);
-        this.snap[side] = null; // aiming beats the punch animation of the same motion
-      }
       const s = this.snap[side];
       if (s) {
         s.t += dt;
@@ -117,15 +120,16 @@ export class FirstPersonGloves {
       if (ghost.visible) this.ghostMat.opacity = 0.16 + 0.14 * (0.5 + 0.5 * Math.sin(this.t * 7));
     }
 
-    // The pistol sits in both fists, barrel away from the player (-z).
     const p = this.pistol;
     this.recoil = Math.max(0, (this.recoil ?? 0) - dt * 6);
     p.visible = this.gun || (p.userData.flashUntil ?? 0) > performance.now() - 250;
     if (p.visible) {
-      p.position.copy(MUZZLE);
-      p.position.z += this.recoil * 0.06;
-      // Turned a little so its side shows — from straight behind it's just a block.
-      p.rotation.set(this.recoil * 0.35 - 0.12, Math.PI - 0.35, 0);
+      // Undo the glove's own tilt so the barrel points at the opponent, then kick it up on a shot.
+      const g = this.gloves.right;
+      const dir = AIM_AT.clone().sub(g.position).normalize();
+      // lookAt with an up vector keeps the pistol upright (the barrel's +z along dir).
+      tmpQ.setFromRotationMatrix(tmpM.lookAt(dir, ORIGIN, UP));
+      p.quaternion.copy(g.quaternion).invert().multiply(tmpQ).multiply(kickQ.setFromAxisAngle(X_AXIS, -this.recoil * 0.45));
       updateFlash(p, performance.now());
     }
   }

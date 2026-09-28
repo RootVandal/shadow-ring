@@ -12,7 +12,6 @@ import { PoseAnimator } from '../../render/animator.js';
 import { KIND, DEFENSE_WORD, TIPS } from '../../strings.js';
 import { CONFIG } from '../../config.js';
 import { wallet } from '../../game/shop.js';
-import { GunGesture } from '../../motion/gun.js';
 
 const other = (side) => (side === 'left' ? 'right' : 'left');
 
@@ -40,9 +39,10 @@ export class FightScreen extends Screen {
     this.foeGlove = this.online ? params.foeGlove ?? 'classic' : 'classic';
     app.stage.gloves.setGlove(this.myGlove);
     app.stage.foe.setGlove(this.foeGlove);
-    // The prank pistol (a promo code in the shop): one shot per fight.
-    this.gun = wallet().pistol ? new GunGesture() : null;
-    this.aiming = false;
+    // The prank pistol (a promo code in the shop): in the right glove from the
+    // first second — the opponent sees it too — and one shot on a button.
+    this.gun = wallet().pistol;
+    app.stage.gloves.setGun(this.gun);
     if (this.online) {
       this.link = params.link;
       app.foeDriver = (now, dt) => (this.koAnim ? this.koAnim.update(dt) : this.link.poseAt(now));
@@ -67,6 +67,16 @@ export class FightScreen extends Screen {
     this.hud.pipSlot.append(this.pip.el);
     const quit = h('button.btn.btn--ghost.btn--small', { style: { position: 'absolute', right: 'var(--gutter)', top: '118px' }, onclick: () => m.forfeit(performance.now()) }, 'Сдаться');
     this.hud.el.append(quit);
+    if (this.gun) {
+      this.fireBtn = h('button.btn.btn--small.fire-btn', { onclick: () => this.#trigger(performance.now()) }, 'Выстрел', h('small', 'пробел'));
+      this.hud.el.append(this.fireBtn);
+      this.onKey = (e) => {
+        if (e.code !== 'Space' || e.repeat || e.target instanceof HTMLInputElement) return;
+        e.preventDefault();
+        this.#trigger(performance.now());
+      };
+      window.addEventListener('keydown', this.onKey);
+    }
     if (this.online) this.#foeCam();
     this.mount(this.hud.el);
 
@@ -111,25 +121,21 @@ export class FightScreen extends Screen {
     if (m.phase === 'break') this.hud.updateCorner(now);
     this.pip.draw({ video: app.input?.video, body, hands: app.tracker.hands, focus, dt });
 
-    if (this.gun) {
-      const g = m.phase === 'round' && !m.roundOver ? this.gun.update(body, app.tracker.E, dt) : { aiming: false, fire: false };
-      this.aiming = g.aiming;
-      app.stage.gloves.setGun(g.aiming);
-      if (g.fire) this.#shoot(now);
-    }
-
     if (this.online && m.phase !== 'over') {
       this.poseIn -= dt;
       if (this.poseIn <= 0) {
         this.poseIn = 1 / CONFIG.net.poseHz;
-        this.link.sendPose(app.tracker.lastFrame, def, this.aiming);
+        this.link.sendPose(app.tracker.lastFrame, def, this.gun);
       }
     }
   }
 
-  /** Bang. The match ends; #over does the rest. */
-  #shoot(now) {
+  /** The button (or Space): bang — only while a round is on. The match ends; #over does the rest. */
+  #trigger(now) {
+    const m = this.match;
+    if (!this.gun || m.phase !== 'round' || m.roundOver || m.paused) return;
     const { app } = this;
+    this.fireBtn?.remove();
     const head = app.stage.foe.world.head.clone();
     app.sfx.shot();
     app.stage.gloves.fire(now);
@@ -167,7 +173,7 @@ export class FightScreen extends Screen {
       hud.callout(this.me.name, 'красный угол', 1300);
       this.later(1350, () => hud.callout(this.foe.name, 'синий угол', 1300));
       this.later(2700, () => hud.callout('Руки к лицу', 'прими стойку', 1300));
-      if (this.gun) app.coach.tip('pistol', { kind: 'info', text: 'Пистолет заряжен: обе руки вперёд, кулаки вместе — и замри. Один патрон.' });
+      if (this.gun) app.coach.tip('pistol', { kind: 'info', text: 'Пистолет в правой руке: кнопка «Выстрел» или пробел. Один патрон.' });
       app.voice.say(`${this.me.name} против ${this.foe.name}`);
     } else if (phase === 'round') {
       hud.hideCorner();
@@ -403,7 +409,8 @@ export class FightScreen extends Screen {
     const left = match.phase === 'round' || result.method === 'ko' ? match.timeLeft(now) / 1000 : 0;
     const secondsLeft = result.method === 'ko' ? (rules.rounds - match.round) * rules.roundSeconds + left : 0;
     const koSeconds = result.method === 'ko' ? inRound + rules.roundSeconds - left : null;
-    this.gun = null;
+    this.gun = false;
+    this.fireBtn?.remove();
     app.stage.gloves.setGun(false);
     const payload = {
       report: this.stats.report(),
@@ -427,6 +434,7 @@ export class FightScreen extends Screen {
     super.exit();
     this.app.stage.foe.setGlove('classic');
     this.app.stage.gloves.setGun(false);
+    if (this.onKey) window.removeEventListener('keydown', this.onKey);
     const { app } = this;
     app.foeDriver = null;
     app.tracker.warnGuard = false;

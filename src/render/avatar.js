@@ -94,10 +94,12 @@ export class Avatar {
     this.flash = 0;
     this.t = 0;
     this.world = { head: new THREE.Vector3(), body: new THREE.Vector3(), lGlove: new THREE.Vector3(), rGlove: new THREE.Vector3() };
+    // The prank pistol in the right glove (glove space: +z along the knuckles).
     this.pistol = makePistol();
-    this.pistol.scale.setScalar(1.6); // seen from the front, barrel first — it has to be big to read
+    this.pistol.scale.setScalar(1.3); // the glove is already ×1.18; seen barrel-first it has to be big to read
+    this.pistol.position.set(0, 0.075, 0.03);
     this.pistol.visible = false;
-    this.body.add(this.pistol);
+    this.gloves.r.add(this.pistol);
     this.gun = false;
   }
 
@@ -216,19 +218,8 @@ export class Avatar {
       glove.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), aim);
     }
 
-    // The pistol in both fists, pointing where the forearms point.
-    const gun = this.pistol;
-    gun.visible = this.gun;
-    if (gun.visible) {
-      gun.position.copy(this.gloves.l.position).add(this.gloves.r.position).multiplyScalar(0.5);
-      gun.position.y += 0.02;
-      // (fresh vectors: tmp.a/b still hold the shoulders, the head below needs them)
-      const dir = this.gloves.l.position.clone().sub(p.lUpper.position).add(this.gloves.r.position.clone().sub(p.rUpper.position));
-      if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1);
-      gun.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir.normalize());
-      gun.position.addScaledVector(dir, 0.1); // out past the gloves, toward the target
-      updateFlash(gun, performance.now());
-    }
+    this.pistol.visible = this.gun;
+    if (this.gun) updateFlash(this.pistol, performance.now());
 
     // Head: from the ears' midpoint relative to the shoulders; face toward the nose.
     const ears = v3(J.lEar).add(v3(J.rEar)).multiplyScalar(0.5);

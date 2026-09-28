@@ -29,11 +29,10 @@ const KEYS = {
   upperStraight: { el: v(0.3, -0.7, -0.12), wr: v(0.36, -0.95, -0.2), idx: v(0.01, -0.08, -0.02), pky: v(0.04, -0.07, 0), thb: v(-0.02, -0.06, -0.03) },
 };
 KEYS.jabShort = blendKey(KEYS.guard, KEYS.jab, 0.45);
-// Low punches (to the body) and the two-handed pistol grip.
+// Low punches (to the body).
 KEYS.jabBody = { el: v(0.14, -0.36, -0.26), wr: v(0.07, -0.3, -0.52), idx: v(-0.035, 0.01, -0.07), pky: v(0.03, 0.02, -0.065), thb: v(-0.04, -0.01, -0.04) };
 KEYS.hookBodyLoad = { el: v(0.4, -0.3, -0.13), wr: v(0.36, -0.32, -0.4), idx: v(-0.02, -0.02, -0.07), pky: v(0.02, 0.02, -0.07), thb: v(-0.03, -0.04, -0.04) };
 KEYS.hookBodyEnd = { el: v(0.28, -0.32, -0.25), wr: v(0.03, -0.3, -0.35), idx: v(-0.07, -0.01, -0.02), pky: v(-0.06, 0.03, 0.02), thb: v(-0.05, -0.03, -0.03) };
-KEYS.aim = { el: v(0.1, -0.52, -0.32), wr: v(0.035, -0.55, -0.6), idx: v(-0.02, 0, -0.07), pky: v(0.02, 0.01, -0.065), thb: v(-0.03, -0.03, -0.05) };
 
 /** Scripted arm motions: [time s, key]. "guard" is replaced by the arm's base pose. */
 export const CLIPS = {

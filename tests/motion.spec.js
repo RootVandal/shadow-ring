@@ -295,35 +295,6 @@ test('defense window: a slip that just ended still shows up in the last 300 ms',
   assert.equal(r.tracker.defense.state.slip, null, 'back in the center now');
   const recent = r.tracker.defenseAt(r.t * 1000, 400);
   assert.ok(recent.some((d) => d.slip), 'but the slip is in the window');
-  assert.ok(!r.tracker.defenseAt(r.t * 1000, 400 - 400 + 50).some?.((d) => d.slip), 'and not in a tiny one');
+  assert.ok(!r.tracker.defenseAt(r.t * 1000, 50).some((d) => d.slip), 'and not in a tiny one');
 });
 
-test('pistol: both arms out with fists together, held — fires once', async () => {
-  const { GunGesture } = await import('../src/motion/gun.js');
-  const r = rig();
-  r.calibrate();
-  const gun = new GunGesture();
-  let fired = 0;
-  let aimed = false;
-  const watch = (s) => {
-    for (let i = 0; i < Math.round(s * 30); i++) {
-      r.step(1 / 30);
-      const g = gun.update(r.tracker.body, r.tracker.E, 1 / 30);
-      if (g.fire) fired++;
-      aimed ||= g.aiming;
-    }
-  };
-  watch(1);
-  assert.equal(fired, 0, 'not from the guard');
-  r.puppet.play('left', 'jab', r.t + 0.05);
-  r.puppet.play('right', 'jab', r.t + 0.3);
-  watch(1.2);
-  assert.equal(fired, 0, 'not from a jab–cross');
-  r.puppet.setBase('left', 'aim');
-  r.puppet.setBase('right', 'aim');
-  watch(1.5);
-  assert.ok(aimed, 'the gun shows');
-  assert.equal(fired, 1, 'one shot');
-  watch(2);
-  assert.equal(fired, 1, 'only one bullet');
-});

@@ -796,6 +796,28 @@ p {
   font-size: 12px;
 }
 
+/* The prank pistol's button, under «Сдаться». */
+.fire-btn {
+  position: absolute;
+  right: var(--gutter);
+  top: 168px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  background: var(--red);
+  color: var(--bone);
+}
+
+.fire-btn small {
+  font: 500 10px var(--mono);
+  opacity: 0.75;
+  text-transform: lowercase;
+}
+
+.fire-btn[disabled] {
+  opacity: 0.6;
+}
+
 /* The opponent's webcam (online): under my plate, the blue corner's frame. */
 .foe-cam {
   position: absolute;

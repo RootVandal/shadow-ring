@@ -105,16 +105,6 @@ export const CONFIG = {
     persistMs: 600,
   },
 
-  // The prank pistol from the shop (motion/gun.js).
-  gun: {
-    minE: 0.55, // both arms extended
-    maxGap: 0.75, // S — fists together
-    minUp: -0.6, // S — fists roughly at shoulder height
-    maxUp: 1.0,
-    showSeconds: 0.15, // the gun appears
-    holdSeconds: 0.7, // …and fires
-  },
-
   cursor: {
     dwellMs: 1100,
     cooldownMs: 700,

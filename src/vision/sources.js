@@ -68,7 +68,6 @@ export class CameraSource {
  *   Shift + the same keys — sloppy versions (short jab, swing, low elbow, straight-arm uppercut)
  *   ← / →  slip (hold)        ↓  duck (hold)              G  drop the guard
  *   H  raise the right hand (menu cursor)                  V  leave the frame
- *   P  (hold) both arms out, fists together — the pistol grip
  *   Z + F / K — a body jab / body hook
  */
 export class PuppetSource {
@@ -133,13 +132,6 @@ export class PuppetSource {
         break;
       case 'KeyZ':
         this.zHeld = down;
-        break;
-      case 'KeyP':
-        if (!e.repeat) {
-          const base = down ? 'aim' : this.guardDown ? 'low' : 'guard';
-          p.setBase('left', base);
-          p.setBase('right', base);
-        }
         break;
       case 'KeyV':
         if (down && !e.repeat) p.visible = !p.visible;
