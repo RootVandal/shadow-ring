@@ -33,9 +33,16 @@ export class BotLink {
 
   attach(match) {
     this.match = match;
-    match.on('phase', ({ phase }) => {
-      if (phase === 'round') this.nextAttackAt = 0;
-      if (phase === 'break') this.animator?.setGuard(0.4);
+    match.on('phase', ({ phase, last }) => {
+      if (phase === 'round') {
+        this.nextAttackAt = 0;
+        this.animator?.reset(); // back on its feet for the next round
+      }
+      if (phase === 'break') {
+        if (last?.method === 'ko' && last.winner === 'me') this.animator?.knockout(true);
+        else if (last?.method === 'ko' && last.winner === 'foe') this.animator?.celebrate();
+        else this.animator?.setGuard(0.4);
+      }
     });
     match.on('over', (r) => {
       if (r.winner === 'me') this.animator?.knockout(r.method === 'ko');

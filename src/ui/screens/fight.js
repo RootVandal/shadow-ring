@@ -54,7 +54,8 @@ export class FightScreen extends Screen {
       link: this.link,
       authority: !this.online || params.role === 'host',
       defense: (now, windowMs) => app.tracker.defenseAt(now, windowMs),
-      rules: this.online ? { ...CONFIG.fight, ...CONFIG.onlineFight } : CONFIG.fight,
+      // Both modes: three rounds, a KO takes the round, 3 s rest, full HP again, most rounds wins.
+      rules: this.online ? { ...CONFIG.fight, ...CONFIG.onlineFight } : { ...CONFIG.fight, breakSeconds: 3, roundKo: true, resetHp: true },
     });
     this.match = m;
     this.stats = new MatchStats();

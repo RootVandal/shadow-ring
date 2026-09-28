@@ -88,6 +88,9 @@ export class PunchTracker {
       up: arm.up,
       angle: arm.angle,
       lift: arm.elbowLift,
+      // Forearm in the image, in shoulder widths: its shape tells punches apart.
+      fx: (arm.wrist.x - arm.elbow.x) / body.S,
+      fy: (arm.wrist.y - arm.elbow.y) / body.S,
       otherGuard: ctx.otherGuard,
     };
     this.hist.push(s);
@@ -194,10 +197,22 @@ export class PunchTracker {
     const minF = c.straight.minForward * sens;
     if (forward < minF || (dropped && forward < minF * c.bodyForward)) score.straight = 0;
 
+    // What a coach looks at: the forearm at the moment of impact. A hook lands
+    // with it lying across (elbow up), an uppercut with it standing up (fist above
+    // the elbow), a straight points it at the camera, so it looks short. A real
+    // uppercut also drifts to the center — without this it read as a hook.
+    const fore = (x) => {
+      const ax = Math.abs(x.fx);
+      const ay = Math.abs(x.fy);
+      return { len: Math.hypot(ax, ay), across: ax > ay * 1.1, upright: ay > ax * 1.1 && x.fy < 0 };
+    };
+    const fh = fore(k.at.inward);
+    const fu = fore(k.at.up);
+    const fs = fore(k.at.E);
     const weighted = {
-      straight: score.straight * (angle.straight >= c.straight.straightAngle ? 1.3 : 0.8),
-      hook: score.hook * (angle.hook <= c.hook.bentAngle ? 1.2 : 0.9) * (gain.hook > 0.9 ? 1.5 : 1),
-      upper: score.upper * (angle.upper <= c.upper.bentAngle ? 1.2 : 0.8),
+      straight: score.straight * (angle.straight >= c.straight.straightAngle ? 1.3 : 0.8) * (fs.len < 0.35 ? 1.25 : 1),
+      hook: score.hook * (angle.hook <= c.hook.bentAngle ? 1.2 : 0.9) * (gain.hook > 0.9 ? 1.5 : 1) * (fh.across ? 1.25 : fh.upright ? 0.3 : 0.6),
+      upper: score.upper * (angle.upper <= c.upper.bentAngle ? 1.2 : 0.8) * (fu.upright ? 1.6 : 0.6),
     };
     let type = null;
     for (const ty of PUNCH_TYPES) {

@@ -298,3 +298,13 @@ test('defense window: a slip that just ended still shows up in the last 300 ms',
   assert.ok(!r.tracker.defenseAt(r.t * 1000, 50).some((d) => d.slip), 'and not in a tiny one');
 });
 
+
+test('uppercut drifting to the center is still an uppercut, not a hook', () => {
+  for (const side of ['left', 'right']) {
+    const r = rig();
+    r.calibrate();
+    r.throw(side, 'upperCross');
+    const p = r.of('punch');
+    assert.equal(p[0]?.kind, 'upper', `${side}: got ${p.map((x) => x.kind)}`);
+  }
+});

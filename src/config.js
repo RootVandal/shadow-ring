@@ -61,7 +61,7 @@ export const CONFIG = {
     straight: { gate: 0.32, minForward: 0.2, maxDrop: 0.45, straightAngle: 140, goodMs: 280, slowMs: 460, maxMs: 560 },
     hook: { gate: 0.5, bentAngle: 135, minElbowLift: -0.45, goodMs: 340, slowMs: 560, maxMs: 700 },
     // maxDip: an uppercut starts from the chest, not the hip — raising a dropped hand isn't one (S below guard).
-    upper: { gate: 0.45, bentAngle: 135, goodMs: 340, slowMs: 560, maxMs: 700, maxDip: 1.1 },
+    upper: { gate: 0.38, bentAngle: 135, goodMs: 340, slowMs: 560, maxMs: 700, maxDip: 1.1 },
 
     // Personal reference: a punch is "short" when it reaches less than this share
     // of what this player usually reaches (rolling 75th percentile).

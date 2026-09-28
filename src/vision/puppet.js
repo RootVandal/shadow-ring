@@ -26,6 +26,7 @@ const KEYS = {
   hookLowEnd: { el: v(0.2, -0.28, -0.2), wr: v(-0.02, -0.46, -0.32), idx: v(-0.07, -0.02, -0.02), pky: v(-0.06, 0.02, 0.02), thb: v(-0.05, -0.04, -0.03) },
   upperLoad: { el: v(0.22, -0.22, -0.1), wr: v(0.12, -0.3, -0.35), idx: v(-0.02, -0.06, -0.04), pky: v(0.02, -0.06, -0.02), thb: v(-0.03, -0.03, -0.05) },
   upperEnd: { el: v(0.16, -0.36, -0.26), wr: v(0.06, -0.66, -0.3), idx: v(-0.02, -0.07, -0.02), pky: v(0.03, -0.065, -0.01), thb: v(-0.035, -0.04, -0.04) },
+  upperCrossEnd: { el: v(0.12, -0.38, -0.24), wr: v(-0.05, -0.67, -0.3), idx: v(-0.02, -0.07, -0.02), pky: v(0.03, -0.065, -0.01), thb: v(-0.035, -0.04, -0.04) },
   upperStraight: { el: v(0.3, -0.7, -0.12), wr: v(0.36, -0.95, -0.2), idx: v(0.01, -0.08, -0.02), pky: v(0.04, -0.07, 0), thb: v(-0.02, -0.06, -0.03) },
 };
 KEYS.jabShort = blendKey(KEYS.guard, KEYS.jab, 0.45);
@@ -45,6 +46,7 @@ export const CLIPS = {
   swing: [[0, 'guard'], [0.16, 'swingLoad'], [0.36, 'swingEnd'], [0.42, 'swingEnd'], [0.66, 'guard']],
   hookLow: [[0, 'guard'], [0.13, 'hookLowLoad'], [0.31, 'hookLowEnd'], [0.37, 'hookLowEnd'], [0.6, 'guard']],
   upper: [[0, 'guard'], [0.14, 'upperLoad'], [0.3, 'upperEnd'], [0.36, 'upperEnd'], [0.6, 'guard']],
+  upperCross: [[0, 'guard'], [0.14, 'upperLoad'], [0.3, 'upperCrossEnd'], [0.36, 'upperCrossEnd'], [0.6, 'guard']],
   upperStraight: [[0, 'guard'], [0.14, 'upperLoad'], [0.32, 'upperStraight'], [0.38, 'upperStraight'], [0.62, 'guard']],
 };
 
