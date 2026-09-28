@@ -71,9 +71,10 @@ export class FightScreen extends Screen {
     this.match = m;
     this.stats = new MatchStats();
     this.hud = new Hud({ me: this.me, foe: this.foe, online: this.online });
+    this.hud.el.classList.add('hud--fight'); // на телефоне в бою — только камеры, таймер и HP (css/app.css)
     this.pip = new Pip({ label: 'ты' });
     this.hud.pipSlot.append(this.pip.el);
-    const quit = h('button.btn.btn--ghost.btn--small', { style: { position: 'absolute', right: 'var(--gutter)', top: '118px' }, onclick: () => m.forfeit(performance.now()) }, 'Сдаться');
+    const quit = h('button.btn.btn--ghost.btn--small.fight-quit', { onclick: () => m.forfeit(performance.now()) }, 'Сдаться');
     this.hud.el.append(quit);
     if (this.online) this.#foeCam();
     this.mount(this.hud.el);

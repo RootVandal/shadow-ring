@@ -80,7 +80,12 @@ export class ShopScreen extends Screen {
     this.promoMsg = h('span.muted', '');
     const tryCode = () => {
       const g = redeem(this.promo.value);
-      if (g && 'money' in g) {
+      if (g && 'pack' in g) {
+        this.promo.value = '';
+        this.promoMsg.textContent = g.fresh ? `Открыто перчаток: ${g.fresh}! Смотри внизу списка.` : 'Все эти перчатки у тебя уже есть';
+        if (g.fresh) app.sfx.cheer(1);
+        this.#render();
+      } else if (g && 'money' in g) {
         this.promo.value = '';
         this.promoMsg.textContent = g.used ? 'Этот код уже активирован' : `+${money(g.money)}!`;
         if (!g.used) app.sfx.cheer(1);

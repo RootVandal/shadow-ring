@@ -135,12 +135,23 @@ export function buy(id) {
 /** Промокоды на деньги (срабатывают один раз): КОД: сумма. Коды на перчатки — поле `code` в GLOVES. */
 const MONEY_CODES = { MILLIONARE: 1_000_000 };
 
+/** Промокоды на набор перчаток: КОД → какие перчатки выдать. RANKED — все перчатки за рейтинг. */
+const PACK_CODES = { RANKED: () => GLOVES.filter((g) => g.rank).map((g) => g.id) };
+
 /**
  * Promo codes: some unlock gloves that aren't for sale, some pay money.
  * @returns {null | {money:number, used?:boolean} | object} glove, money result, or null
  */
 export function redeem(code) {
   const c = String(code).trim().toUpperCase();
+  if (PACK_CODES[c]) {
+    const ids = PACK_CODES[c]();
+    const w = read();
+    const fresh = ids.filter((id) => !w.owned.includes(id));
+    w.owned.push(...fresh);
+    save('wallet', w);
+    return { pack: ids, fresh: fresh.length };
+  }
   if (MONEY_CODES[c]) {
     const w = read();
     w.codes = Array.isArray(w.codes) ? w.codes : [];

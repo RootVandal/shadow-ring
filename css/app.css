@@ -797,6 +797,12 @@ p {
 }
 
 /* The opponent's webcam (online): under my plate, the blue corner's frame. */
+.fight-quit {
+  position: absolute;
+  right: var(--gutter);
+  top: 118px;
+}
+
 .foe-cam {
   position: absolute;
   left: var(--gutter);
@@ -2068,6 +2074,124 @@ p {
 
   .stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ─── Phone fight: only the webcams, the clock and HP ─────────────────── */
+/* In a fight (.hud--fight, not the tutorial) a phone shows the opponent, one
+   thin top bar and two small cameras in the bottom corners — nothing else. */
+@media (max-width: 760px), (max-height: 500px) and (pointer: coarse) {
+  .hud--fight {
+    padding: 8px 10px;
+  }
+
+  .hud--fight .hud__top {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .hud--fight .clock {
+    grid-column: auto;
+    grid-row: auto;
+    align-self: start;
+    min-width: 0;
+    padding: 3px 8px 4px;
+    border-width: 1px;
+  }
+
+  .hud--fight .clock__round,
+  .hud--fight .hud__net,
+  .hud--fight .plate__title,
+  .hud--fight .bar--sta,
+  .hud--fight .hud__bottom > div:first-child,
+  .hud--fight .defense-row,
+  .hud--fight .readout,
+  .hud--fight .tg__label {
+    display: none;
+  }
+
+  .hud--fight .clock__time {
+    font-size: 20px;
+  }
+
+  .hud--fight .plate {
+    padding: 5px 10px 7px;
+    box-shadow: none;
+  }
+
+  .hud--fight .plate__row {
+    gap: 6px;
+  }
+
+  .hud--fight .plate__name {
+    font-size: 13px;
+  }
+
+  .hud--fight .plate__hp {
+    font-size: 15px;
+  }
+
+  .hud--fight .rank-badge {
+    width: 16px;
+    height: 18px;
+    font-size: 10px;
+  }
+
+  .hud--fight .bar {
+    margin-top: 4px;
+  }
+
+  .hud--fight .fight-quit {
+    top: auto;
+    right: 50%;
+    bottom: 10px;
+    transform: translateX(50%);
+    padding: 4px 10px;
+    font-size: 11px;
+    opacity: 0.75;
+  }
+
+  /* Two small cameras in the bottom corners: the opponent's left, mine right. */
+  .hud--fight .foe-cam {
+    top: auto;
+    left: 10px;
+    bottom: 10px;
+    width: min(28vw, 180px, 36vh);
+    box-shadow: none;
+  }
+
+  .hud--fight .hud__bottom {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    display: block;
+  }
+
+  .hud--fight .hud-pip {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: min(28vw, 180px, 36vh);
+  }
+
+  .hud--fight .pip__label,
+  .hud--fight .foe-cam .pip__label {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .hud--fight .popup {
+    font-size: 20px;
+  }
+
+  .hud--fight .callout__text {
+    font-size: clamp(30px, 11vw, 64px);
+    text-shadow: 4px 4px 0 var(--red);
+  }
+
+  .hud--fight .telegraph {
+    transform: scale(0.75);
   }
 }
 

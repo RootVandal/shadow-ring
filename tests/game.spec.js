@@ -8,7 +8,7 @@ import { Coach, roundTalk, verdict } from '../src/game/coach.js';
 import { scoreOf, leaderboard } from '../src/game/records.js';
 import { mulberry32 } from '../src/util/math.js';
 import { CONFIG } from '../src/config.js';
-import { GLOVES, hashCode, TITLES, titleById, gloveById, buy } from '../src/game/shop.js';
+import { GLOVES, hashCode, TITLES, titleById, gloveById, buy, redeem } from '../src/game/shop.js';
 import { rankOf, winsToNext, nextState, TOP, RANKS } from '../src/game/ranked.js';
 import { voiceScore } from '../src/audio/voice.js';
 
@@ -454,4 +454,11 @@ test('ranked: rank gloves cannot be bought', () => {
     const res = buy(r.glove);
     assert.ok(!res.ok && (res.reason === 'rank' || res.reason === 'owned'), `${r.glove}: ${res.reason}`);
   }
+});
+
+test('shop: the RANKED code unlocks every rank glove at once', () => {
+  const r = redeem(' ranked ');
+  assert.ok(r && Array.isArray(r.pack));
+  assert.equal(r.pack.length, RANKS.filter((x) => x.glove).length);
+  for (const id of r.pack) assert.ok(gloveById(id).rank, id);
 });
