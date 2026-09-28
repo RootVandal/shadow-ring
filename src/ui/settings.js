@@ -35,6 +35,15 @@ export function openSettings(app) {
       'Показывать мою камеру сопернику (онлайн)',
       h('input', { type: 'checkbox', checked: s.shareCam, onchange: (e) => set({ shareCam: e.target.checked }) }),
     ),
+    h(
+      'label.field',
+      'Графика',
+      select(
+        s.graphics,
+        [['auto', 'Авто — снижается сама, если лагает'], ['high', 'Высокая'], ['medium', 'Средняя'], ['low', 'Низкая'], ['lowest', 'Минимальная — для слабых устройств']],
+        (v) => set({ graphics: v }),
+      ),
+    ),
     h('label.field', 'Звук', h('input', { type: 'checkbox', checked: s.sound, onchange: (e) => set({ sound: e.target.checked }) })),
     h(
       'label.field',

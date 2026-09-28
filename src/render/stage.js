@@ -3,6 +3,7 @@ import { Arena } from './arena.js';
 import { Avatar } from './avatar.js';
 import { FirstPersonGloves } from './gloves.js';
 import { Fx } from './fx.js';
+import { TIER } from './quality.js';
 import { expAlpha } from '../util/math.js';
 
 export const FOE_Z = -0.75;
@@ -15,14 +16,16 @@ const LOOK = new THREE.Vector3(0, 1.52, FOE_Z);
  *   fight    — first person: the player's eyes, head-tracked, with their gloves
  */
 export class Stage {
-  constructor(canvas, { quality = 'high' } = {}) {
+  /** @param {HTMLCanvasElement} canvas  @param {{tier?: keyof TIER}} [o] */
+  constructor(canvas, { tier = 'high' } = {}) {
     this.canvas = canvas;
-    this.quality = quality;
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: quality !== 'low', powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === 'low' ? 1 : 1.75));
+    // Antialiasing can only be chosen when the context is created.
+    const antialias = tier === 'high' || tier === 'medium';
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias, powerPreference: 'high-performance' });
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
-    renderer.shadowMap.enabled = quality !== 'low';
+    // Always on: without a shadow-casting light it costs nothing, and a tier can turn the light's shadow off.
+    renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer = renderer;
 
@@ -32,7 +35,7 @@ export class Stage {
     this.camera = new THREE.PerspectiveCamera(60, 1, 0.05, 80);
     this.scene.add(this.camera);
 
-    this.arena = new Arena(this.scene, { quality });
+    this.arena = new Arena(this.scene, { tier });
     this.foe = new Avatar({ corner: 'blue' });
     this.foe.root.position.set(0, 0, FOE_Z);
     this.scene.add(this.foe.root);
@@ -48,8 +51,20 @@ export class Stage {
     this.ghosts = { left: false, right: false };
     this.eye = EYE.clone();
 
+    this.maxFps = 0;
+    this.lastRender = 0;
     this.resize = this.resize.bind(this);
     window.addEventListener('resize', this.resize);
+    this.setTier(tier);
+  }
+
+  /** Applies a graphics tier (see quality.js) — at runtime, no reload. */
+  setTier(tier) {
+    const t = TIER[tier] ?? TIER.high;
+    this.tier = tier;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, t.pixelRatio));
+    this.arena.setTier(t);
+    this.maxFps = t.maxFps;
     this.resize();
   }
 
@@ -119,6 +134,10 @@ export class Stage {
     const k = this.blend * this.blend * (3 - 2 * this.blend);
     this.camera.position.lerpVectors(orbitPos, fpPos, k);
     this.camera.lookAt(new THREE.Vector3().lerpVectors(orbitLook, fpLook, k));
+    // On the lowest tier the scene is drawn at most maxFps times a second, which
+    // leaves the main thread and the GPU to pose tracking.
+    if (this.maxFps && now - this.lastRender < 1000 / this.maxFps - 4) return;
+    this.lastRender = now;
     this.renderer.render(this.scene, this.camera);
   }
 

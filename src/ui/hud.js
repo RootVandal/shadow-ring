@@ -58,39 +58,56 @@ export class Hud {
       this.cornerBox,
     );
     this.tgs = new Map();
+    this.written = new Map();
     this.readoutUntil = 0;
     this.calloutUntil = 0;
   }
 
   // ── per-frame ─────────────────────────────────────────────────────────
 
+  /** Writes to the DOM only when the value changed — every write costs a style pass. */
+  #put(el, key, value) {
+    let seen = this.written.get(el);
+    if (!seen) this.written.set(el, (seen = {}));
+    if (seen[key] === value) return;
+    seen[key] = value;
+    if (key === 'text') el.textContent = value;
+    else if (key.startsWith('--')) el.style.setProperty(key, value);
+    else el.style[key] = value;
+  }
+
   update(now, { match, defense, redFlash, rtt }) {
+    const put = (el, key, value) => this.#put(el, key, value);
     const set = (p, f) => {
-      const v = Math.max(0, f.hp) / f.maxHp;
-      p.hp.style.setProperty('--v', v.toFixed(3));
-      p.lag.style.setProperty('--v', v.toFixed(3));
-      p.num.textContent = String(Math.ceil(Math.max(0, f.hp)));
+      const v = (Math.max(0, f.hp) / f.maxHp).toFixed(3);
+      put(p.hp, '--v', v);
+      put(p.lag, '--v', v);
+      put(p.num, 'text', String(Math.ceil(Math.max(0, f.hp))));
       const s = (f.stamina ?? 100) / 100;
-      p.sta.style.setProperty('--v', s.toFixed(3));
+      put(p.sta, '--v', s.toFixed(2));
       p.staBar.classList.toggle('is-low', s < 0.25);
     };
     set(this.red, match.me);
     set(this.blue, match.foe);
     const phase = match.phase;
     const left = match.timeLeft(now) / 1000;
-    this.round.textContent =
+    const roundText =
       phase === 'round' ? `раунд ${match.round} / ${match.rules.rounds}${match.rules.roundKo ? ` · ${match.wins.me}:${match.wins.foe}` : ''}` : phase === 'break' ? 'угол' : phase === 'intro' ? 'представление' : phase === 'over' ? 'бой окончен' : 'ждём';
-    this.time.textContent = phase === 'waiting' || phase === 'over' ? '—' : mmss(left);
+    put(this.round, 'text', roundText);
+    put(this.time, 'text', phase === 'waiting' || phase === 'over' ? '—' : mmss(left));
     this.clock.classList.toggle('is-last', phase === 'round' && left <= 10);
-    if (rtt != null) this.net.textContent = `пинг ${Math.round(rtt)} мс`;
+    if (rtt != null) put(this.net, 'text', `пинг ${Math.round(rtt / 10) * 10} мс`);
 
     this.chips.guard.classList.toggle('is-ok', defense.guard === 'full');
-    this.chips.guard.textContent = defense.guard === 'half' ? 'полблока' : 'блок';
+    put(this.chips.guard, 'text', defense.guard === 'half' ? 'полблока' : 'блок');
     this.chips.slip.classList.toggle('is-ok', !!defense.slip);
-    this.chips.slip.textContent = defense.slip ? `уклон ${defense.slip === 'left' ? '←' : '→'}` : 'уклон';
+    put(this.chips.slip, 'text', defense.slip ? `уклон ${defense.slip === 'left' ? '←' : '→'}` : 'уклон');
     this.chips.duck.classList.toggle('is-ok', !!defense.duck);
 
-    this.redEdge.style.opacity = String(Math.min(1, redFlash));
+    // A full-screen blurred shadow: keep it out of compositing while it's invisible.
+    const edge = redFlash > 0.01 ? Math.min(1, redFlash).toFixed(2) : '0';
+    put(this.redEdge, 'opacity', edge);
+    put(this.redEdge, 'visibility', edge === '0' ? 'hidden' : 'visible');
     if (now > this.readoutUntil) this.readout.classList.remove('is-on');
     if (this.calloutUntil && now > this.calloutUntil) {
       this.calloutBox.replaceChildren();

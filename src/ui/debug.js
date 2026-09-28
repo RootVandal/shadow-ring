@@ -31,7 +31,7 @@ export class DebugPanel {
       `${a.state.padEnd(7)} E ${f(a.E)} [ang ${f(a.parts?.angle)} rch ${f(a.parts?.reach)} cmp ${f(a.parts?.compact)} hnd ${f(a.parts?.hand)}]  vE ${f(a.live.vE, 1).padStart(5)} vIn ${f(a.live.vIn, 1).padStart(5)} vUp ${f(a.live.vUp, 1).padStart(5)} ${a.guard ? 'GUARD' : ''}`;
     const def = d.defense;
     this.el.textContent = [
-      `input ${app.input?.kind ?? '—'} ${f(app.input?.fps, 0)}fps  S ${f(d.S, 0)}px  mode ${d.mode}  framing ${d.framing ?? 'ok'}  luma ${f(app.tracker.luma, 0)}  screen ${app.screenName}`,
+      `gfx ${app.stage.tier}${app.autoQuality ? ` auto ${f(app.autoQuality.fps, 0)}fps` : ''}  input ${app.input?.kind ?? '—'} ${f(app.input?.fps, 0)}fps  S ${f(d.S, 0)}px  mode ${d.mode}  framing ${d.framing ?? 'ok'}  luma ${f(app.tracker.luma, 0)}  screen ${app.screenName}`,
       `L ${arm(d.left)}`,
       `R ${arm(d.right)}`,
       `guard ${def.guard}  slip ${def.slip ?? '-'}  duck ${def.duck}  lat ${f(def.lateral)}  drop ${f(def.drop)}  tilt ${f(def.tilt, 0)}°`,

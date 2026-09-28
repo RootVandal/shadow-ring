@@ -32,6 +32,8 @@ export class HandCursor {
     this.since = 0;
     this.cooldownUntil = 0;
     this.onSelect = null;
+    this.targets = [];
+    this.scannedAt = -Infinity;
   }
 
   setEnabled(on) {
@@ -69,10 +71,13 @@ export class HandCursor {
     let best = null;
     let bestD = Infinity;
     const m = this.cfg.magnetPx;
-    for (const el of document.querySelectorAll('[data-dwell]')) {
-      if (el.disabled || !el.isConnected) continue;
-      const b = el.getBoundingClientRect();
-      if (!b.width) continue;
+    // Measuring every button forces a layout; buttons don't move that often.
+    if (now - this.scannedAt > 250) {
+      this.scannedAt = now;
+      this.targets = [...document.querySelectorAll('[data-dwell]')].map((el) => ({ el, b: el.getBoundingClientRect() }));
+    }
+    for (const { el, b } of this.targets) {
+      if (el.disabled || !el.isConnected || !b.width) continue;
       const dx = Math.max(b.left - x, 0, x - b.right);
       const dy = Math.max(b.top - y, 0, y - b.bottom);
       if (dx > m || dy > m) continue;

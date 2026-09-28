@@ -59,6 +59,11 @@ body::after {
   mix-blend-mode: overlay;
 }
 
+/* The grain blends over the whole WebGL canvas every frame — too much for weak GPUs. */
+[data-grain="off"] body::after {
+  display: none;
+}
+
 #ui {
   position: fixed;
   inset: 0;
