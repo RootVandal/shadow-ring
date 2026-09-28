@@ -8,7 +8,7 @@ import { UI } from '../../strings.js';
 // только пока открыта вкладка (переменная last ниже). В онлайн-боях лица нет.
 // Как лицо ложится на голову — Avatar.setFace (render/avatar.js).
 
-const OUT_W = 192; // картинка для головы: 3:4, как прорезь в шлеме
+const OUT_W = 224; // картинка для головы 7:8 — под переднюю часть головы манекена
 const OUT_H = 256;
 
 /** Последнее фото за эту сессию — чтобы не загружать заново перед реваншем. */
@@ -136,7 +136,7 @@ export class FaceScreen extends Screen {
       g.translate(OUT_W / 2, OUT_H / 2);
       g.scale(1, OUT_H / OUT_W);
       const r = OUT_W / 2;
-      const grd = g.createRadialGradient(0, 0, r * 0.62, 0, 0, r);
+      const grd = g.createRadialGradient(0, 0, r * 0.72, 0, 0, r);
       grd.addColorStop(0, 'rgba(0,0,0,1)');
       grd.addColorStop(1, 'rgba(0,0,0,0)');
       g.fillStyle = grd;

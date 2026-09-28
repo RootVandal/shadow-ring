@@ -1993,8 +1993,8 @@ p {
 }
 
 .face-preview {
-  width: 150px;
-  height: 200px;
+  width: 168px;
+  height: 192px;
   border-radius: 50% / 45%;
   border: 2px solid var(--line);
   touch-action: none;

@@ -109,10 +109,12 @@ export class Avatar {
 
   /**
    * Фото лица на голове — режим «Свой соперник» (ui/screens/face.js), только бой с ботом.
-   * canvas — готовая картинка 3:4 с мягкими краями; null — убрать.
-   * Лицо — кусочек сферы чуть больше головы, в прорези шлема; двигается вместе с головой.
+   * canvas — готовая картинка 7:8 с мягкими краями; null — убрать.
+   * Лицо — кусочек сферы чуть больше головы на всю её переднюю часть; двигается вместе
+   * с головой. Шлем на это время снимаем — иначе он закрывает края лица.
    */
   setFace(canvas) {
+    this.parts.gear.visible = !canvas;
     if (this.face) {
       this.parts.head.remove(this.face);
       this.face.material.map?.dispose();
@@ -132,7 +134,7 @@ export class Avatar {
       emissiveMap: map,
       emissiveIntensity: 0.35,
     });
-    faceGeo ??= new THREE.SphereGeometry(0.1135, 32, 24, Math.PI / 2 - 0.78, 1.56, 0.42, 1.75);
+    faceGeo ??= new THREE.SphereGeometry(0.1135, 40, 32, Math.PI / 2 - 1.15, 2.3, 0.28, 2.07);
     this.face = new THREE.Mesh(faceGeo, mat);
     this.parts.head.add(this.face);
   }
