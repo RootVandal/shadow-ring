@@ -30,6 +30,7 @@ python tools/serve.py        # запуск: http://localhost:8080
 | Перчатки в магазине (цена, название, описание) | `src/game/shop.js` → `GLOVES` | |
 | Цвет/материал перчатки | `src/render/materials.js` → `gloveMaterialFor` | |
 | Промокоды | `src/game/shop.js` | перчатки — поле `code` в `GLOVES`, деньги — `MONEY_CODES` |
+| Титулы (название, цена, описание) | `src/game/shop.js` → `TITLES` | вид надписи — классы `.title--<id>` в `css/app.css` |
 | Награда за онлайн-победу | `src/game/shop.js` → `WIN_REWARD` | |
 | Музыка | `src/audio/music.js` | темп `BPM`, ритм — массивы `KICK`, `SNARE`, `HAT` |
 | Звуки ударов, гонг | `src/audio/sfx.js` | |

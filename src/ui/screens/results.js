@@ -172,7 +172,7 @@ export class ResultsScreen extends Screen {
     if (!this.meAgain || !this.peerAgain) return;
     const { params } = this;
     this.keepLink = true;
-    this.app.go('fight', { mode: 'online', link: this.link, role: params.role, foeName: params.foeName, foeGlove: params.foeGlove });
+    this.app.go('fight', { mode: 'online', link: this.link, role: params.role, foeName: params.foeName, foeGlove: params.foeGlove, foeTitle: params.foeTitle });
   }
 
   #leave(to) {

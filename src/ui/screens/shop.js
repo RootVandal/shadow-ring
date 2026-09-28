@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { Screen } from '../screen.js';
 import { h, clear } from '../../util/dom.js';
-import { GLOVES, gloveById, wallet, buy, equip, redeem, WIN_REWARD } from '../../game/shop.js';
+import { GLOVES, gloveById, wallet, buy, equip, redeem, WIN_REWARD, TITLES, buyTitle, wearTitle } from '../../game/shop.js';
+import { titleTag } from '../title.js';
 import { gloveMaterialFor, makeGlove, COLORS } from '../../render/materials.js';
 
 const money = (n) => `$${n.toLocaleString('ru-RU')}`;
@@ -96,6 +97,13 @@ export class ShopScreen extends Screen {
     };
     this.promo.addEventListener('keydown', (e) => e.key === 'Enter' && tryCode());
     this.detail = h('div');
+    // Вкладки «Перчатки | Титулы»: переключают, какая сетка видна.
+    this.tab = 'gloves';
+    this.titleGrid = h('div.shop', { style: { display: 'none' } });
+    this.titleMsg = h('p.muted', { style: { minHeight: '1.45em' } });
+    this.titleBox = h('div', { style: { display: 'none', gap: '12px' } }, this.titleMsg, this.titleGrid);
+    const tabBtn = (id, label) => h('button.shop-tab', { dataset: { dwell: '', tab: id }, onclick: () => this.#setTab(id) }, label);
+    this.tabs = h('div.shop-tabs', tabBtn('gloves', 'Перчатки'), tabBtn('titles', 'Титулы'));
     this.mount(
       h(
         'section.screen.results',
@@ -113,13 +121,62 @@ export class ShopScreen extends Screen {
               this.promoMsg,
             ),
           ),
+          this.tabs,
           this.grid,
+          this.titleBox,
           h('div.menu__foot', h('span'), h('button.btn.btn--ghost.btn--small', { dataset: { dwell: '' }, onclick: () => app.go('menu') }, 'В меню')),
         ),
         this.detail,
       ),
     );
     this.#render();
+    this.#setTab('gloves');
+  }
+
+  #setTab(id) {
+    this.tab = id;
+    for (const b of this.tabs.children) b.classList.toggle('is-on', b.dataset.tab === id);
+    this.grid.style.display = id === 'gloves' ? '' : 'none';
+    this.titleBox.style.display = id === 'titles' ? 'grid' : 'none';
+    this.titleGrid.style.display = id === 'titles' ? '' : 'none';
+    if (id === 'titles') this.#renderTitles();
+  }
+
+  /** Вкладка «Титулы»: карточка — как титул выглядит над твоим ником, цена и действие. */
+  #renderTitles(msg = '') {
+    const { app } = this;
+    const w = wallet();
+    this.moneyEl.textContent = money(w.money);
+    this.titleMsg.textContent = msg || (w.title ? '' : 'Титул пишется над ником — в меню и в бою, его видит соперник.');
+    clear(this.titleGrid).append(
+      ...TITLES.map((t) => {
+        const owned = w.titles.includes(t.id);
+        const worn = w.title === t.id;
+        const act = () => {
+          if (worn) {
+            wearTitle(null);
+            app.sfx.select();
+            return this.#renderTitles(`Титул «${t.name}» снят.`);
+          }
+          if (owned) {
+            wearTitle(t.id);
+            app.sfx.select();
+            return this.#renderTitles(`Надет титул «${t.name}».`);
+          }
+          const r = buyTitle(t.id);
+          if (!r.ok) return this.#renderTitles(`На «${t.name}» не хватает ${money(t.price - wallet().money)}. Побеждай онлайн!`);
+          app.sfx.cheer(0.6);
+          this.#renderTitles(`Куплен и надет титул «${t.name}»!`);
+        };
+        return h(
+          `button.title-card${worn ? '.is-on' : ''}`,
+          { dataset: { dwell: '' }, onclick: act },
+          h('div.title-card__preview', titleTag(t.id), h('b', app.settings.name)),
+          h('p', t.desc),
+          h('span.title-card__price', worn ? 'надето · нажми, чтобы снять' : owned ? 'куплено · надеть' : money(t.price)),
+        );
+      }),
+    );
   }
 
   #render() {
@@ -213,7 +270,7 @@ export class ShopScreen extends Screen {
       }
       return;
     }
-    const cards = this.cards ?? [];
+    const cards = this.tab === 'gloves' ? this.cards ?? [] : [];
     if (!cards.length || this.app.stage.tier === 'lowest') return;
     if (now < this.next) return;
     this.next = now + 1000 / (CARD_FPS * cards.length);

@@ -3,6 +3,8 @@ import { Pip } from '../pip.js';
 import { openSettings } from '../settings.js';
 import { h } from '../../util/dom.js';
 import { UI } from '../../strings.js';
+import { wallet } from '../../game/shop.js';
+import { titleTag } from '../title.js';
 
 export function tile({ key = null, title, text, num, accent = '', onclick }) {
   const [t, d] = key ? UI.modes[key] : [title, text];
@@ -27,7 +29,12 @@ export class MenuScreen extends Screen {
         'section.screen.menu.shade-left',
         h(
           'div.menu__head',
-          h('div', h('p.muted.mono', { style: { fontSize: '13px', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '10px' } }, `боец: ${app.settings.name}`), h('h1.menu__title', UI.menuTitle)),
+          h(
+            'div',
+            titleTag(wallet().title),
+            h('p.muted.mono', { style: { fontSize: '13px', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '10px' } }, `боец: ${app.settings.name}`),
+            h('h1.menu__title', UI.menuTitle),
+          ),
           h('div.menu-pip', this.pip.el),
         ),
         h(

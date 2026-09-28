@@ -1738,6 +1738,138 @@ p {
   }
 }
 
+/* ─── Shop tabs & titles ──────────────────────────────────────────────── */
+
+.shop-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.shop-tab {
+  padding: 8px 18px;
+  border: 2px solid var(--line);
+  background: transparent;
+  color: var(--bone-2);
+  font: 400 20px/1 var(--display);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.shop-tab.is-on {
+  border-color: var(--tape);
+  background: var(--tape);
+  color: var(--ink);
+}
+
+.title-card {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 16px;
+  border: 2px solid var(--line);
+  border-radius: 4px;
+  background: radial-gradient(circle at 50% 30%, #2a2520, var(--ink-2) 75%);
+  color: var(--bone);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.title-card:hover,
+.title-card.is-hover {
+  transform: translateY(-4px);
+  border-color: var(--tape);
+}
+
+.title-card.is-on {
+  border-color: var(--ok);
+}
+
+.title-card__preview {
+  display: grid;
+  justify-items: start;
+  padding: 12px;
+  background: var(--red);
+}
+
+.title-card__preview b {
+  font: 400 22px/1 var(--display);
+  text-transform: uppercase;
+}
+
+.title-card p {
+  color: var(--bone-2);
+  font-size: 14px;
+}
+
+.title-card__price {
+  font: 700 14px var(--mono);
+  color: var(--tape);
+}
+
+/* The title itself: a small tag above the nickname. */
+.title-tag {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 3px 8px;
+  background: rgba(0, 0, 0, 0.35);
+  font: 700 11px/1.2 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.plate__title {
+  line-height: 1;
+}
+
+.plate__title .title-tag {
+  margin-bottom: 5px;
+}
+
+.title--kms {
+  border: 1px solid var(--bone-2);
+  color: var(--bone);
+}
+
+.title--master {
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: #9e0f1c;
+  color: #fff;
+}
+
+.title--legend {
+  border: 1px solid var(--tape);
+  color: var(--tape);
+  text-shadow: 0 0 8px rgba(242, 201, 76, 0.7);
+}
+
+.title--dohlyak {
+  border: 1px dashed #9a978a;
+  color: #b9b6a8;
+  font-style: italic;
+  transform: rotate(-2deg);
+}
+
+.title--vip {
+  border: 1px solid #fff1b8;
+  background: linear-gradient(100deg, #b8860b 0%, #f7d774 30%, #fff6cf 45%, #e0b43c 60%, #a8740a 100%);
+  background-size: 250% 100%;
+  color: #2b1d00;
+  text-shadow: none;
+  animation: vip-shine 2.6s linear infinite;
+}
+
+@keyframes vip-shine {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
+
 /* ─── Small screens & phones ──────────────────────────────────────────── */
 
 /* Screens let touches through to the scene (#ui > * above), so a swipe on text

@@ -36,6 +36,9 @@ export class FightScreen extends Screen {
     this.me = new Fighter({ name: app.settings.name, corner: 'red' });
     this.foe = new Fighter({ name: this.online ? params.foeName : 'Тень', corner: 'blue' });
     this.koAnim = null;
+    // Титулы над никами на плашках (у Тени титула нет).
+    this.me.title = wallet().title;
+    this.foe.title = this.online ? params.foeTitle ?? null : null;
     this.myGlove = wallet().equipped;
     this.foeGlove = this.online ? params.foeGlove ?? 'classic' : 'classic';
     app.stage.gloves.setGlove(this.myGlove);
@@ -383,6 +386,7 @@ export class FightScreen extends Screen {
       level: this.params.level,
       foeName: this.foe.name,
       foeGlove: this.params.foeGlove,
+      foeTitle: this.params.foeTitle,
       round: match.round,
       secondsLeft,
       koSeconds,

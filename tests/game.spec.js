@@ -8,7 +8,7 @@ import { Coach, roundTalk, verdict } from '../src/game/coach.js';
 import { scoreOf, leaderboard } from '../src/game/records.js';
 import { mulberry32 } from '../src/util/math.js';
 import { CONFIG } from '../src/config.js';
-import { GLOVES, hashCode } from '../src/game/shop.js';
+import { GLOVES, hashCode, TITLES, titleById } from '../src/game/shop.js';
 
 const OPEN = { guard: 'open', slip: false, duck: false };
 const FULL = { guard: 'full', slip: false, duck: false };
@@ -386,4 +386,17 @@ test('match: in one-hit gloves any punch that lands takes the round, a slip stil
   assert.equal(hit.hp, 0);
   for (const x of hits.filter((x) => x.outcome === 'slipped' || x.outcome === 'ducked')) assert.equal(x.damage, 0);
   assert.equal(resolveHit({ kind: 'cross', power: 400 }, SLIP).damage, 0);
+});
+
+test('shop: five titles with their prices; an unknown title from the opponent is ignored', () => {
+  const price = Object.fromEntries(TITLES.map((t) => [t.id, t.price]));
+  assert.equal(TITLES.length, 5);
+  assert.equal(price.kms, 3000);
+  assert.equal(price.master, 6000);
+  assert.equal(price.legend, 10000);
+  assert.equal(price.dohlyak, 1000);
+  assert.equal(price.vip, 500000);
+  assert.equal(titleById('vip').name, 'VIP золотой');
+  assert.equal(titleById('<script>'), null);
+  assert.equal(titleById(undefined), null);
 });

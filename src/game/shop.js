@@ -53,6 +53,19 @@ export const GLOVES = [
 
 export const gloveById = (id) => GLOVES.find((g) => g.id === id) ?? GLOVES[0];
 
+// ТИТУЛЫ: надпись над ником (в меню и на плашке с HP в бою), её видит соперник.
+// Вид каждого титула — классы .title--<id> в css/app.css.
+export const TITLES = [
+  { id: 'kms', name: 'КМС', price: 3000, desc: 'Кандидат в мастера спорта. Уже не новичок — соперник это видит.' },
+  { id: 'master', name: 'Мастер спорта', price: 6000, desc: 'Звание, которое не дают просто так. Красная плашка над ником.' },
+  { id: 'legend', name: 'Легенда', price: 10000, desc: 'О твоих боях рассказывают в раздевалке. Золотая надпись.' },
+  { id: 'dohlyak', name: 'Дохляк', price: 1000, desc: 'Для тех, кто любит, когда его недооценивают. Смешно — пока не прилетит.' },
+  { id: 'vip', name: 'VIP золотой', price: 500000, desc: 'Самый дорогой титул в игре. Переливается золотом — видно издалека.' },
+];
+
+/** Титул по id или null (неизвестные id от соперника тоже дают null). */
+export const titleById = (id) => TITLES.find((t) => t.id === id) ?? null;
+
 /** Бьёт ли надетая перчатка с одного удара. */
 export const isOneHit = (id) => gloveById(id).effect === 'onehit';
 
@@ -73,6 +86,8 @@ function read() {
     owned: Array.isArray(w?.owned) ? w.owned : ['classic'],
     equipped: typeof w?.equipped === 'string' ? w.equipped : 'classic',
     codes: Array.isArray(w?.codes) ? w.codes : [],
+    titles: Array.isArray(w?.titles) ? w.titles : [],
+    title: typeof w?.title === 'string' ? w.title : null,
   };
 }
 
@@ -130,6 +145,29 @@ export function equip(id) {
   const w = read();
   if (!w.owned.includes(id)) return false;
   w.equipped = id;
+  save('wallet', w);
+  return true;
+}
+
+/** Купить титул (и сразу надеть). @returns {{ok:boolean, reason?:'owned'|'money'}} */
+export function buyTitle(id) {
+  const w = read();
+  const t = titleById(id);
+  if (!t) return { ok: false, reason: 'owned' };
+  if (w.titles.includes(id)) return { ok: false, reason: 'owned' };
+  if (w.money < t.price) return { ok: false, reason: 'money' };
+  w.money -= t.price;
+  w.titles.push(id);
+  w.title = id;
+  save('wallet', w);
+  return { ok: true };
+}
+
+/** Надеть купленный титул или снять (id = null). */
+export function wearTitle(id) {
+  const w = read();
+  if (id !== null && !w.titles.includes(id)) return false;
+  w.title = id;
   save('wallet', w);
   return true;
 }

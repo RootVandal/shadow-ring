@@ -1,5 +1,6 @@
 import { h, mmss } from '../util/dom.js';
 import { KIND } from '../strings.js';
+import { titleTag } from './title.js';
 
 // Fight overlay in TV-broadcast style: nameplates with HP and stamina, round
 // clock, the coach's note, the incoming-punch telegraph and hit popups.
@@ -16,6 +17,7 @@ export class Hud {
       const num = h('span.plate__hp', '100');
       const el = h(
         `div.plate${cls}`,
+        f.title ? h('div.plate__title', titleTag(f.title)) : null,
         h('div.plate__row', h('span.plate__name', f.name), num),
         h('div.bar', lag, hp),
         h('div.bar.bar--sta', sta),
