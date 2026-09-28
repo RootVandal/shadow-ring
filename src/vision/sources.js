@@ -68,6 +68,7 @@ export class CameraSource {
  *   Shift + the same keys — sloppy versions (short jab, swing, low elbow, straight-arm uppercut)
  *   ← / →  slip (hold)        ↓  duck (hold)              G  drop the guard
  *   H  raise the right hand (menu cursor)                  V  leave the frame
+ *   Z + F / K — a body jab / body hook
  */
 export class PuppetSource {
   constructor({ onFrame }) {
@@ -96,11 +97,12 @@ export class PuppetSource {
     const p = this.puppet;
     const t = performance.now() / 1000;
     const sloppy = e.shiftKey;
+    const low = this.zHeld;
     const punches = {
-      KeyF: ['left', sloppy ? 'jabShort' : 'jab'],
+      KeyF: ['left', low ? 'jabBody' : sloppy ? 'jabShort' : 'jab'],
       KeyJ: ['right', sloppy ? 'jabShort' : 'jab'],
       KeyD: ['left', sloppy ? 'swing' : 'hook'],
-      KeyK: ['right', sloppy ? 'hookLow' : 'hook'],
+      KeyK: ['right', low ? 'hookBody' : sloppy ? 'hookLow' : 'hook'],
       KeyS: ['left', sloppy ? 'upperStraight' : 'upper'],
       KeyL: ['right', sloppy ? 'upperStraight' : 'upper'],
     };
@@ -127,6 +129,9 @@ export class PuppetSource {
         break;
       case 'KeyH':
         if (!e.repeat) p.setBase('right', down ? 'cursor' : this.guardDown ? 'low' : 'guard');
+        break;
+      case 'KeyZ':
+        this.zHeld = down;
         break;
       case 'KeyV':
         if (down && !e.repeat) p.visible = !p.visible;

@@ -54,6 +54,8 @@ function sparkline(points) {
 }
 
 export class RecordsScreen extends Screen {
+  static covers = true;
+
   enter() {
     const { app } = this;
     app.stage.setMode('showcase');

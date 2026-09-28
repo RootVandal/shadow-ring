@@ -7,7 +7,9 @@ import { CONFIG } from '../config.js';
 // ships TURN relays for networks where a direct path is impossible). No game
 // server of our own — the site stays a static folder.
 
-export const PROTOCOL = 2; // 2: online fights are three rounds, a KO ends only the round
+// 2: online fights are three rounds, a KO ends only the round
+// 3: hit zones (atk.zone), the dodge window, the pistol (pose.g, end method 'shot')
+export const PROTOCOL = 3;
 /** What the other side sees of us besides the skeleton (shop gloves). */
 export const profile = { glove: 'classic' };
 const ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';

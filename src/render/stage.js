@@ -97,6 +97,11 @@ export class Stage {
     return EYE.clone().add(new THREE.Vector3(0, -0.04, -0.22));
   }
 
+  /** Where a body shot at the player aims: below the view, at the chest. */
+  get bodyAim() {
+    return EYE.clone().add(new THREE.Vector3(0, -0.5, -0.25));
+  }
+
   /** World position of the player's glove (for outgoing punches). */
   gloveWorld(side) {
     return this.gloves.gloves[side].getWorldPosition(new THREE.Vector3());
@@ -136,7 +141,8 @@ export class Stage {
     this.camera.lookAt(new THREE.Vector3().lerpVectors(orbitLook, fpLook, k));
     // On the lowest tier the scene is drawn at most maxFps times a second, which
     // leaves the main thread and the GPU to pose tracking.
-    if (this.maxFps && now - this.lastRender < 1000 / this.maxFps - 4) return;
+    const maxFps = this.covered ? 10 : this.maxFps;
+    if (maxFps && now - this.lastRender < 1000 / maxFps - 4) return;
     this.lastRender = now;
     this.renderer.render(this.scene, this.camera);
   }

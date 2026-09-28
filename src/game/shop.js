@@ -41,12 +41,23 @@ export const GLOVES = [
 
 export const gloveById = (id) => GLOVES.find((g) => g.id === id) ?? GLOVES[0];
 
+/** Not gloves: things a promo code gives. */
+export const SECRETS = [
+  {
+    id: 'pistol',
+    name: 'Пистолет',
+    code: 'PIFPAF',
+    desc: 'С первой секунды боя — в правой перчатке, соперник его видит. Один патрон: кнопка «Выстрел» или пробел — и бой окончен.',
+  },
+];
+
 function read() {
   const w = load('wallet', null);
   return {
     money: Number.isFinite(w?.money) ? w.money : 0,
     owned: Array.isArray(w?.owned) ? w.owned : ['classic'],
     equipped: typeof w?.equipped === 'string' ? w.equipped : 'classic',
+    pistol: w?.pistol === true,
   };
 }
 
@@ -75,7 +86,15 @@ export function buy(id) {
 
 /** Promo codes unlock gloves that aren't for sale. */
 export function redeem(code) {
-  const g = GLOVES.find((x) => x.code && x.code === String(code).trim().toUpperCase());
+  const wanted = String(code).trim().toUpperCase();
+  const secret = SECRETS.find((x) => x.code === wanted);
+  if (secret) {
+    const w = read();
+    w[secret.id] = true;
+    save('wallet', w);
+    return { ...secret, item: true };
+  }
+  const g = GLOVES.find((x) => x.code && x.code === wanted);
   if (!g) return null;
   const w = read();
   if (!w.owned.includes(g.id)) w.owned.push(g.id);

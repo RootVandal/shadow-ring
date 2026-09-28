@@ -796,6 +796,28 @@ p {
   font-size: 12px;
 }
 
+/* The prank pistol's button, under «Сдаться». */
+.fire-btn {
+  position: absolute;
+  right: var(--gutter);
+  top: 168px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  background: var(--red);
+  color: var(--bone);
+}
+
+.fire-btn small {
+  font: 500 10px var(--mono);
+  opacity: 0.75;
+  text-transform: lowercase;
+}
+
+.fire-btn[disabled] {
+  opacity: 0.6;
+}
+
 /* The opponent's webcam (online): under my plate, the blue corner's frame. */
 .foe-cam {
   position: absolute;
@@ -1007,7 +1029,10 @@ p {
 }
 
 .callout__text {
-  font: 400 clamp(64px, 13vw, 200px) / 0.9 var(--display);
+  /* 9vw: ten-letter words («ПОРАЖЕНИЕ», «ЗАСТРЕЛИЛ!») must fit across the screen. */
+  font: 400 clamp(40px, 9vw, 200px) / 0.9 var(--display);
+  max-width: calc(100vw - 2 * var(--gutter));
+  overflow-wrap: anywhere;
   text-transform: uppercase;
   text-align: center;
   color: var(--bone);

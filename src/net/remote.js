@@ -27,7 +27,7 @@ function flipLast(last) {
 }
 
 /** Skeleton → compact integers (cm), in avatar space. */
-export function packPose(frame, def = {}) {
+export function packPose(frame, def = {}, gun = false) {
   if (!frame?.world) return null;
   const j = [];
   for (const name of JOINT_NAMES) {
@@ -36,7 +36,9 @@ export function packPose(frame, def = {}) {
   }
   // Slips and ducks move the whole body; MediaPipe's world space is hip-centered
   // and wouldn't show them, so they travel separately (S ≈ 0.38 m of shoulder width).
-  return { j, l: Math.round(-(def.lateral ?? 0) * 38), d: Math.round(clamp(def.drop ?? 0, 0, 1.5) * 34) };
+  const out = { j, l: Math.round(-(def.lateral ?? 0) * 38), d: Math.round(clamp(def.drop ?? 0, 0, 1.5) * 34) };
+  if (gun) out.g = 1; // aiming the prank pistol — the other side draws it
+  return out;
 }
 
 export function unpackPose(m) {
@@ -44,7 +46,7 @@ export function unpackPose(m) {
   JOINT_NAMES.forEach((name, i) => {
     joints[name] = { x: (m.j[i * 3] ?? 0) / 100, y: (m.j[i * 3 + 1] ?? 0) / 100, z: (m.j[i * 3 + 2] ?? 0) / 100 };
   });
-  return { joints, lateral: clamp((m.l ?? 0) / 100, -0.4, 0.4), drop: clamp((m.d ?? 0) / 100, 0, 0.45) };
+  return { joints, lateral: clamp((m.l ?? 0) / 100, -0.4, 0.4), drop: clamp((m.d ?? 0) / 100, 0, 0.45), gun: m.g === 1 };
 }
 
 function lerpPose(a, b, k) {
@@ -54,7 +56,7 @@ function lerpPose(a, b, k) {
     const q = b.joints[name];
     joints[name] = { x: lerp(p.x, q.x, k), y: lerp(p.y, q.y, k), z: lerp(p.z, q.z, k) };
   }
-  return { joints, lateral: lerp(a.lateral, b.lateral, k), drop: lerp(a.drop, b.drop, k) };
+  return { joints, lateral: lerp(a.lateral, b.lateral, k), drop: lerp(a.drop, b.drop, k), gun: b.gun };
 }
 
 /** Never trust numbers from the other side more than the rules allow. */
@@ -66,6 +68,7 @@ function sanitizeAttack(a) {
     side: a.side === 'right' ? 'right' : 'left',
     quality: clamp(Number(a.quality) || 0, 0, 1),
     power: clamp(Number(a.power) || 0, 0, 16),
+    zone: a.zone === 'body' ? 'body' : 'head',
     window: clamp(Number(a.window) || 700, 450, 900),
   };
 }
@@ -123,7 +126,7 @@ export class RemoteLink extends Emitter {
   }
 
   sendAttack(a) {
-    this.wire.send('atk', { a: { id: a.id, kind: a.kind, side: a.side, quality: a.quality, power: a.power, window: a.window } });
+    this.wire.send('atk', { a: { id: a.id, kind: a.kind, side: a.side, quality: a.quality, power: a.power, window: a.window, zone: a.zone } });
   }
 
   sendResult(r) {
@@ -155,8 +158,8 @@ export class RemoteLink extends Emitter {
     this.wire.send('again');
   }
 
-  sendPose(frame, def) {
-    const p = packPose(frame, def);
+  sendPose(frame, def, gun = false) {
+    const p = packPose(frame, def, gun);
     if (p) this.wire.send('pose', p);
   }
 

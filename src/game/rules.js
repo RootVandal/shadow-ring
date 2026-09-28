@@ -10,6 +10,13 @@ import { CONFIG } from '../config.js';
 //
 // Straights are slipped, hooks are ducked, uppercuts are slipped — and ducking
 // into an uppercut is the worst thing you can do.
+//
+// Two hit zones. Where the fist was at full extension decides (motion/punch-tracker.js):
+//   head  — everything above, as before
+//   body  — a punch thrown low. Weaker (×0.7, never a crit), but a slip or a
+//           duck moves only the head, so they don't help; the elbows of a real
+//           guard cover the ribs partly. Every body shot also takes stamina.
+// Uppercuts always go to the head.
 
 // base damage is tuned so an average fight against the normal bot reaches
 // round 2–3: a knockout has to be earned, not found in the first 20 seconds.
@@ -21,6 +28,9 @@ export const PUNCHES = {
 };
 
 export const PUNCH_KINDS = Object.keys(PUNCHES);
+export const ZONES = ['head', 'body'];
+
+const BODY = { power: 0.7, drain: 16, guard: { full: 0.6, half: 0.8, open: 1 } };
 
 /** The defense that beats each punch — the coach and the telegraph teach it. */
 export const COUNTER = { jab: 'slip', cross: 'slip', hook: 'duck', upper: 'slip' };
@@ -47,7 +57,7 @@ export function attackPower({ kind, quality, tired = false, counter = false }) {
 
 /**
  * @typedef {{guard:'full'|'half'|'open', slip:boolean, duck:boolean, slipStale?:boolean, duckStale?:boolean}} Defense
- * @typedef {{outcome:'hit'|'crit'|'blocked'|'slipped'|'ducked', damage:number, lesson:string|null}} Resolution
+ * @typedef {{outcome:'hit'|'crit'|'blocked'|'slipped'|'ducked', damage:number, lesson:string|null, drain?:number}} Resolution
  */
 
 /**
@@ -58,6 +68,11 @@ export function attackPower({ kind, quality, tired = false, counter = false }) {
 export function resolveHit(attack, def) {
   const { kind, power, quality = 0.8 } = attack;
   const g = group(kind);
+  if (attack.zone === 'body' && g !== 'upper') {
+    const damage = power * BODY.power * BODY.guard[def.guard];
+    const outcome = def.guard === 'full' ? 'blocked' : 'hit';
+    return { outcome, damage, lesson: def.guard === 'full' ? null : 'hit_body', drain: BODY.drain };
+  }
   if (def.slip) {
     if (g === 'hook') return { outcome: 'hit', damage: power * 1.15, lesson: 'hit_hook_slipped' };
     return { outcome: 'slipped', damage: 0, lesson: null };

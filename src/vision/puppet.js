@@ -29,11 +29,17 @@ const KEYS = {
   upperStraight: { el: v(0.3, -0.7, -0.12), wr: v(0.36, -0.95, -0.2), idx: v(0.01, -0.08, -0.02), pky: v(0.04, -0.07, 0), thb: v(-0.02, -0.06, -0.03) },
 };
 KEYS.jabShort = blendKey(KEYS.guard, KEYS.jab, 0.45);
+// Low punches (to the body).
+KEYS.jabBody = { el: v(0.14, -0.36, -0.26), wr: v(0.07, -0.3, -0.52), idx: v(-0.035, 0.01, -0.07), pky: v(0.03, 0.02, -0.065), thb: v(-0.04, -0.01, -0.04) };
+KEYS.hookBodyLoad = { el: v(0.4, -0.3, -0.13), wr: v(0.36, -0.32, -0.4), idx: v(-0.02, -0.02, -0.07), pky: v(0.02, 0.02, -0.07), thb: v(-0.03, -0.04, -0.04) };
+KEYS.hookBodyEnd = { el: v(0.28, -0.32, -0.25), wr: v(0.03, -0.3, -0.35), idx: v(-0.07, -0.01, -0.02), pky: v(-0.06, 0.03, 0.02), thb: v(-0.05, -0.03, -0.03) };
 
 /** Scripted arm motions: [time s, key]. "guard" is replaced by the arm's base pose. */
 export const CLIPS = {
   jab: [[0, 'guard'], [0.17, 'jab'], [0.24, 'jab'], [0.46, 'guard']],
   jabShort: [[0, 'guard'], [0.13, 'jabShort'], [0.2, 'jabShort'], [0.38, 'guard']],
+  jabBody: [[0, 'guard'], [0.18, 'jabBody'], [0.25, 'jabBody'], [0.48, 'guard']],
+  hookBody: [[0, 'guard'], [0.13, 'hookBodyLoad'], [0.31, 'hookBodyEnd'], [0.37, 'hookBodyEnd'], [0.6, 'guard']],
   noReturn: [[0, 'guard'], [0.17, 'jab'], [2.2, 'jab'], [2.5, 'guard']],
   hook: [[0, 'guard'], [0.13, 'hookLoad'], [0.31, 'hookEnd'], [0.37, 'hookEnd'], [0.6, 'guard']],
   swing: [[0, 'guard'], [0.16, 'swingLoad'], [0.36, 'swingEnd'], [0.42, 'swingEnd'], [0.66, 'guard']],

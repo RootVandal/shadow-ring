@@ -31,7 +31,8 @@ export class Match extends Emitter {
    * @param {import('./fighter.js').Fighter} o.foe
    * @param {object} o.link
    * @param {boolean} [o.authority]  runs the round clock (bot fights, online host)
-   * @param {(now:number) => import('./rules.js').Defense} o.defense  my defense right now
+   * @param {(now:number, windowMs:number) => import('./rules.js').Defense|import('./rules.js').Defense[]} o.defense
+   *   my defense right now — or every defense I showed in the last windowMs; the best one counts
    */
   constructor({ me, foe, link, authority = true, defense, rules = CONFIG.fight }) {
     super();
@@ -74,7 +75,7 @@ export class Match extends Emitter {
 
     for (let i = 0; i < this.incomingQ.length; ) {
       const inc = this.incomingQ[i];
-      if (now >= inc.impactAt) {
+      if (now >= inc.impactAt + (this.rules.dodgeLateMs ?? 0)) {
         this.incomingQ.splice(i, 1);
         this.#impact(inc, now);
         if (this.phase === 'over') return;
@@ -109,6 +110,7 @@ export class Match extends Emitter {
       side: ev.side,
       quality: ev.quality,
       power: attackPower({ kind: ev.kind, quality: ev.quality, tired, counter }),
+      zone: ev.zone === 'body' && ev.kind !== 'upper' ? 'body' : 'head',
       counter,
       tired,
       window: Math.round(WINDOW[ev.kind] - clamp(((ev.speed ?? 1) - 1) * 150, 0, 120)),
@@ -172,6 +174,14 @@ export class Match extends Emitter {
     this.emit('pause', paused);
   }
 
+  /** The prank pistol: one shot, the fight is over. */
+  shoot(now) {
+    if (this.phase !== 'round' || this.paused) return false;
+    this.foe.hp = 0;
+    this.#finish({ winner: 'me', method: 'shot' }, now);
+    return true;
+  }
+
   forfeit(now) {
     this.#finish({ winner: 'foe', method: 'forfeit' }, now);
   }
@@ -183,10 +193,20 @@ export class Match extends Emitter {
   // ── internals ─────────────────────────────────────────────────────────
 
   #impact(inc, now) {
-    const def = this.defense(now);
-    const res = resolveHit(inc.attack, def);
+    // Resolved a little after impact, against everything I did around it.
+    const window = (this.rules.dodgeLookbackMs ?? 0) + (this.rules.dodgeLateMs ?? 0);
+    let def = null;
+    let res = null;
+    for (const d of [].concat(this.defense(now, window))) {
+      const r = resolveHit(inc.attack, d);
+      if (!res || r.damage < res.damage) {
+        def = d;
+        res = r;
+      }
+    }
     if (isMiss(res.outcome)) this.lastDodgeAt = now;
     if (res.damage > 0) this.me.hurt(res.damage);
+    if (res.drain) this.me.stamina = Math.max(0, this.me.stamina - res.drain);
     const used = def.slip ? 'slip' : def.duck ? 'duck' : def.guard === 'open' ? 'none' : 'guard';
     this.link.sendResult({ id: inc.attack.id, outcome: res.outcome, damage: res.damage, hp: this.me.hp, defense: used }, now);
     this.emit('defended', { attack: inc.attack, ...res, def, hp: this.me.hp });
