@@ -47,6 +47,7 @@ function read() {
     money: Number.isFinite(w?.money) ? w.money : 0,
     owned: Array.isArray(w?.owned) ? w.owned : ['classic'],
     equipped: typeof w?.equipped === 'string' ? w.equipped : 'classic',
+    codes: Array.isArray(w?.codes) ? w.codes : [],
   };
 }
 
@@ -73,9 +74,25 @@ export function buy(id) {
   return { ok: true };
 }
 
-/** Promo codes unlock gloves that aren't for sale. */
+/** Codes that pay out money instead of a glove — once per account. */
+const MONEY_CODES = { MILLIONARE: 1_000_000 };
+
+/**
+ * Promo codes: some unlock gloves that aren't for sale, some pay money.
+ * @returns {null | {money:number, used?:boolean} | object} glove, money result, or null
+ */
 export function redeem(code) {
-  const g = GLOVES.find((x) => x.code && x.code === String(code).trim().toUpperCase());
+  const c = String(code).trim().toUpperCase();
+  if (MONEY_CODES[c]) {
+    const w = read();
+    w.codes = Array.isArray(w.codes) ? w.codes : [];
+    if (w.codes.includes(c)) return { money: 0, used: true };
+    w.codes.push(c);
+    w.money += MONEY_CODES[c];
+    save('wallet', w);
+    return { money: MONEY_CODES[c] };
+  }
+  const g = GLOVES.find((x) => x.code && x.code === c);
   if (!g) return null;
   const w = read();
   if (!w.owned.includes(g.id)) w.owned.push(g.id);
