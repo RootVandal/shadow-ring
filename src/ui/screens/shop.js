@@ -105,14 +105,16 @@ export class ShopScreen extends Screen {
           h(
             'div.menu__head',
             h('div', h('h1.menu__title', 'Магазин'), h('p.muted', { style: { marginTop: '8px' } }, `${money(WIN_REWARD)} за каждую победу в онлайне. Перчатки видит соперник.`)),
-            this.moneyEl,
+            h(
+              'div',
+              { style: { display: 'grid', gap: '10px', justifyItems: 'end' } },
+              this.moneyEl,
+              h('div.code-input', this.promo, h('button.btn.btn--small', { onclick: tryCode }, 'Активировать')),
+              this.promoMsg,
+            ),
           ),
           this.grid,
-          h(
-            'div.menu__foot',
-            h('div.code-input', this.promo, h('button.btn.btn--small', { onclick: tryCode }, 'Активировать'), this.promoMsg),
-            h('button.btn.btn--ghost.btn--small', { dataset: { dwell: '' }, onclick: () => app.go('menu') }, 'В меню'),
-          ),
+          h('div.menu__foot', h('span'), h('button.btn.btn--ghost.btn--small', { dataset: { dwell: '' }, onclick: () => app.go('menu') }, 'В меню')),
         ),
         this.detail,
       ),
