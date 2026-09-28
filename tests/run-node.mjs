@@ -3,6 +3,7 @@ import { run } from './t.js';
 import './motion.spec.js';
 import './game.spec.js';
 import './net.spec.js';
+import './quality.spec.js';
 
 const { passed, failed } = await run(({ name, ok, error }) => {
   console.log(`${ok ? '  ok  ' : ' FAIL '} ${name}${ok ? '' : `\n        ${error.message}`}`);

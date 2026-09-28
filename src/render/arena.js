@@ -11,19 +11,30 @@ const POST = 3.22;
 const ROPES = [0.42, 0.74, 1.06, 1.38];
 
 export class Arena {
-  constructor(scene, { quality = 'high' } = {}) {
+  /** @param {THREE.Scene} scene  @param {{tier?: string}} [o]  the starting tier sizes the crowd */
+  constructor(scene, { tier = 'high' } = {}) {
     this.scene = scene;
-    this.quality = quality;
     this.group = new THREE.Group();
     scene.add(this.group);
     this.rnd = mulberry32(17);
     this.excitement = 0;
     this.flashes = [];
+    this.cones = [];
+    this.frame = 0;
+    this.crowdEvery = 1;
+    const small = tier === 'low' || tier === 'lowest';
     this.#lights();
     this.#ring();
     this.#hall();
-    this.#crowd(quality === 'low' ? 150 : 380);
-    this.#flashPool(quality === 'low' ? 6 : 14);
+    this.#crowd(small ? 150 : 380);
+    this.#flashPool(small ? 6 : 14);
+  }
+
+  /** @param {import('./quality.js').TIER[keyof import('./quality.js').TIER]} t */
+  setTier(t) {
+    this.key.castShadow = t.shadows;
+    for (const c of this.cones) c.visible = t.haze;
+    this.crowdEvery = t.crowdEvery;
   }
 
   #lights() {
@@ -32,13 +43,10 @@ export class Arena {
     const key = new THREE.SpotLight(0xfff0dc, 250, 18, 0.62, 0.6, 2);
     key.position.set(0, 7.2, 0.8);
     key.target.position.set(0, 0.8, -0.5);
-    if (this.quality !== 'low') {
-      key.castShadow = true;
-      key.shadow.mapSize.set(1024, 1024);
-      key.shadow.bias = -0.0004;
-      key.shadow.camera.near = 3;
-      key.shadow.camera.far = 12;
-    }
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.bias = -0.0004;
+    key.shadow.camera.near = 3;
+    key.shadow.camera.far = 12;
     s.add(key, key.target);
     this.key = key;
     const rim = new THREE.DirectionalLight(0x6d8cff, 1.5);
@@ -135,7 +143,7 @@ export class Arena {
       bar.position.set(x, 5.6, z);
       g.add(bar);
     }
-    if (this.quality !== 'low') {
+    {
       const coneMat = new THREE.MeshBasicMaterial({
         map: coneTexture(),
         transparent: true,
@@ -158,6 +166,7 @@ export class Arena {
         // Narrow end up at the lamp, wide end down toward the ring.
         cone.lookAt(0, -2, 0);
         cone.rotateX(-Math.PI / 2);
+        this.cones.push(cone);
         g.add(lamp, cone);
       }
     }
@@ -242,7 +251,7 @@ export class Arena {
 
   update(now, dt) {
     this.excitement = Math.max(0, this.excitement - dt * 0.35);
-    this.#placeCrowd(now / 1000);
+    if (this.frame++ % this.crowdEvery === 0) this.#placeCrowd(now / 1000);
     for (const f of this.flashes) if (f.sprite.visible && now > f.until) f.sprite.visible = false;
     if (this.rnd() < dt * (0.9 + this.excitement * 8)) this.flash(1, now);
   }

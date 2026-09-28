@@ -1,4 +1,6 @@
 import { Stage } from './render/stage.js';
+import { AutoQuality, TIER } from './render/quality.js';
+import { Pip } from './ui/pip.js';
 import { PoseAnimator } from './render/animator.js';
 import { MotionTracker } from './motion/tracker.js';
 import { Coach } from './game/coach.js';
@@ -11,7 +13,7 @@ import { SCREENS } from './ui/screens/index.js';
 import { DebugPanel } from './ui/debug.js';
 import { load, save } from './util/store.js';
 
-const DEFAULTS = { name: '', stance: 'orthodox', sensitivity: 'normal', sound: true, voice: true, model: 'lite', shareCam: true };
+const DEFAULTS = { name: '', stance: 'orthodox', sensitivity: 'normal', sound: true, voice: true, model: 'lite', shareCam: true, graphics: 'auto' };
 const FIRST = ['Тихий', 'Быстрый', 'Железный', 'Хитрый', 'Бешеный', 'Ночной', 'Левый', 'Точный'];
 const SECOND = ['Джеб', 'Хук', 'Кулак', 'Апперкот', 'Нырок', 'Уклон', 'Кросс', 'Клинч'];
 
@@ -40,8 +42,9 @@ export class App {
       save('settings', this.settings);
     }
     this.mobile = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820;
-    const quality = params.get('quality') ?? (this.mobile ? 'low' : 'high');
-    this.stage = new Stage(canvas, { quality });
+    this.stage = new Stage(canvas, { tier: this.#startTier() });
+    this.#applyTier(this.stage.tier);
+    this.#setupAutoQuality();
     this.sfx = new Sfx();
     this.sfx.enabled = this.settings.sound;
     this.voice = new Voice();
@@ -125,9 +128,34 @@ export class App {
     this.sfx.setEnabled(s.sound);
     this.voice.enabled = s.voice;
     if (!s.voice) this.voice.stop();
+    if ('graphics' in patch) {
+      if (s.graphics !== 'auto') this.#applyTier(s.graphics);
+      this.#setupAutoQuality();
+    }
+  }
+
+  /** ?quality=… pins a tier for testing; otherwise the setting, and 'auto' starts by device. */
+  #startTier() {
+    const forced = this.params.get('quality');
+    if (TIER[forced]) return forced;
+    if (TIER[this.settings.graphics]) return this.settings.graphics;
+    return this.mobile ? 'low' : 'high';
+  }
+
+  #setupAutoQuality() {
+    const auto = !TIER[this.params.get('quality')] && this.settings.graphics === 'auto';
+    this.autoQuality = auto ? new AutoQuality({ tier: this.stage.tier, onChange: (t) => this.#applyTier(t) }) : null;
+  }
+
+  #applyTier(tier) {
+    const t = TIER[tier];
+    if (tier !== this.stage.tier) this.stage.setTier(tier);
+    Pip.maxDpr = t.pipDpr;
+    document.documentElement.dataset.grain = t.grain ? 'on' : 'off';
   }
 
   loop(now) {
+    this.autoQuality?.sample((now - this.last) / 1000);
     const dt = Math.min(0.1, Math.max(0, (now - this.last) / 1000));
     this.last = now;
     this.screen?.frame(now, dt);

@@ -10,7 +10,13 @@ const RED = '#d8342c';
 const OK = '#8cc56f';
 const TAPE = '#f2c94c';
 
+// The camera gives ~30 frames a second; redrawing the preview more often only burns time.
+const MIN_FRAME_MS = 1000 / 30 - 2;
+
 export class Pip {
+  /** Resolution cap for every preview, set by the graphics tier (app.js). */
+  static maxDpr = 2;
+
   constructor({ label = 'ТЫ' } = {}) {
     this.el = document.createElement('div');
     this.el.className = 'pip';
@@ -24,6 +30,7 @@ export class Pip {
       this.el.append(tag);
     }
     this.flash = { left: 0, right: 0 };
+    this.lastDraw = 0;
   }
 
   /** Lights up an arm for a moment — the punch was recognized. */
@@ -38,11 +45,14 @@ export class Pip {
    * @param {{left:boolean,right:boolean}} [o.hands]  which fists are in guard
    * @param {object|null} [o.focus]  coach focus: {joint, side, to}
    * @param {boolean} [o.targets]    draw the guard targets
-   * @param {number} [o.dt]
    */
-  draw({ video, body, hands = null, focus = null, targets = false, dt = 0.016 }) {
+  draw({ video, body, hands = null, focus = null, targets = false }) {
+    const now = performance.now();
+    if (now - this.lastDraw < MIN_FRAME_MS) return;
+    const dt = Math.min(0.1, (now - this.lastDraw) / 1000);
+    this.lastDraw = now;
     const c = this.canvas;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, Pip.maxDpr);
     const cw = Math.round(this.el.clientWidth * dpr);
     const ch = Math.round(this.el.clientHeight * dpr);
     if (!cw || !ch) return;
