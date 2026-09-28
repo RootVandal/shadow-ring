@@ -12,6 +12,7 @@ import { createPoseDetector } from './vision/pose-detector.js';
 import { SCREENS } from './ui/screens/index.js';
 import { DebugPanel } from './ui/debug.js';
 import { load, save } from './util/store.js';
+import { mountAccountBar } from './ui/account.js';
 
 const DEFAULTS = { name: '', stance: 'orthodox', sensitivity: 'normal', sound: true, voice: true, model: 'lite', shareCam: true, graphics: 'auto' };
 const FIRST = ['Тихий', 'Быстрый', 'Железный', 'Хитрый', 'Бешеный', 'Ночной', 'Левый', 'Точный'];
@@ -70,6 +71,7 @@ export class App {
   boot() {
     if (this.inputKind === 'camera') this.#preload();
     document.addEventListener('visibilitychange', () => this.screen?.onVisibility?.(document.hidden));
+    mountAccountBar();
     this.go('landing');
     requestAnimationFrame(this.loop);
   }
@@ -117,6 +119,8 @@ export class App {
     this.stage.covered = S.covers;
     this.screen = new S(this, params);
     this.screenName = name;
+    // The account corner only shows between fights.
+    document.body.classList.toggle('is-busy', ['setup', 'calibrate', 'fight', 'tutorial'].includes(name));
     this.screen.enter();
   }
 

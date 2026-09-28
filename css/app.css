@@ -1738,6 +1738,139 @@ p {
   }
 }
 
+/* ─── Account ─────────────────────────────────────────────────────────── */
+
+.account {
+  position: fixed;
+  top: 12px;
+  right: var(--gutter);
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 12px;
+  background: rgba(23, 21, 19, 0.9);
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+.is-busy .account {
+  display: none;
+}
+
+/* Leave room for the account corner. */
+.poster__top,
+.menu__head {
+  padding-right: 240px;
+}
+
+@media (max-width: 640px) {
+  .poster__top span:last-child {
+    display: none;
+  }
+
+  .poster__top,
+  .menu__head {
+    padding-right: 0;
+    padding-top: 36px;
+  }
+}
+
+.account__who {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+}
+
+.account__who i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+
+.account__who.is-guest {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.account__btn {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--bone);
+  color: var(--ink);
+  font: 700 13px var(--ui);
+  cursor: pointer;
+}
+
+.auth {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(14, 13, 12, 0.8);
+  animation: screen-in 0.25s ease-out;
+}
+
+.auth__card {
+  display: grid;
+  gap: 12px;
+  width: min(380px, 100%);
+  padding: 26px;
+  background: var(--ink-2);
+  border-top: 6px solid var(--red);
+  box-shadow: var(--hard);
+}
+
+.auth__card h2 {
+  font-size: 32px;
+  text-transform: uppercase;
+}
+
+.auth__card input {
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  border-radius: 3px;
+  background: var(--ink);
+  color: var(--bone);
+  font: 600 16px var(--ui);
+}
+
+.auth__card input:focus {
+  outline: none;
+  border-color: var(--bone);
+}
+
+.auth__card .btn {
+  justify-content: center;
+}
+
+.auth__err {
+  min-height: 1.2em;
+  color: #ff7a70;
+  font-size: 14px;
+}
+
+.auth__switch,
+.auth__note {
+  font-size: 14px;
+  color: var(--bone-2);
+}
+
+.auth__switch a {
+  color: var(--tape);
+}
+
+.auth__note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 /* ─── Small screens & phones ──────────────────────────────────────────── */
 
 @media (max-width: 900px) {
