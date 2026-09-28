@@ -1007,7 +1007,10 @@ p {
 }
 
 .callout__text {
-  font: 400 clamp(64px, 13vw, 200px) / 0.9 var(--display);
+  /* 9vw: ten-letter words («ПОРАЖЕНИЕ», «ЗАСТРЕЛИЛ!») must fit across the screen. */
+  font: 400 clamp(40px, 9vw, 200px) / 0.9 var(--display);
+  max-width: calc(100vw - 2 * var(--gutter));
+  overflow-wrap: anywhere;
   text-transform: uppercase;
   text-align: center;
   color: var(--bone);

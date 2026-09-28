@@ -77,6 +77,7 @@ export class BotLink {
       if (m.phase === 'over') return;
       const res = resolveHit(attack, def);
       if (res.damage > 0) m.foe.hurt(res.damage);
+      if (res.drain) m.foe.stamina = Math.max(0, m.foe.stamina - res.drain);
       if (isLanded(res.outcome)) {
         this.animator?.hit(res.outcome === 'crit' ? 1 : 0.6, attack);
         if (res.outcome === 'crit' || res.damage >= 10) this.stunnedUntil = t + 550;
@@ -105,7 +106,9 @@ export class BotLink {
     const stunned = now < this.stunnedUntil;
     let choice = 'none';
     if (!stunned && this.rnd() < p.defend) {
-      choice = this.rnd() < p.smart ? COUNTER[attack.kind] : ['guard', 'slip', 'duck'][Math.floor(this.rnd() * 3)];
+      // Against a body shot the only thing that helps is the guard.
+      const best = attack.zone === 'body' && attack.kind !== 'upper' ? 'guard' : COUNTER[attack.kind];
+      choice = this.rnd() < p.smart ? best : ['guard', 'slip', 'duck'][Math.floor(this.rnd() * 3)];
     }
     if (choice === 'slip') this.animator?.slip(this.rnd() < 0.5 ? -1 : 1);
     else if (choice === 'duck') this.animator?.duck();

@@ -11,6 +11,8 @@ const pct = (x) => (x == null ? '—' : `${Math.round(x * 100)}%`);
 
 /** Verdict, numbers and — most important — what to work on next time. */
 export class ResultsScreen extends Screen {
+  static covers = true;
+
   enter() {
     const { app, params } = this;
     const { report, result, mode, level, foeName, round, secondsLeft, koSeconds, myHp, foeHp, link } = params;
@@ -49,7 +51,11 @@ export class ResultsScreen extends Screen {
     const how =
       result.method === 'ko'
         ? `${win ? 'нокаутом' : 'нокаут'} в ${round}-м раунде`
-        : result.method === 'forfeit'
+        : result.method === 'shot'
+        ? win
+          ? 'застрелил соперника'
+          : 'застрелен'
+      : result.method === 'forfeit'
           ? win
             ? 'соперник покинул ринг'
             : 'бой остановлен'

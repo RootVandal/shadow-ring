@@ -77,8 +77,12 @@ export class MotionTracker extends Emitter {
     return this.baseline !== null;
   }
 
-  /** Defense as it counts right now; `nowMs` on the performance.now() clock. */
-  defenseAt(nowMs) {
+  /**
+   * Defense as it counts right now; `nowMs` on the performance.now() clock.
+   * With `windowMs`, every defense shown in that window before now (an array).
+   */
+  defenseAt(nowMs, windowMs = 0) {
+    if (windowMs > 0) return this.defense.snapshots(nowMs / 1000, windowMs / 1000);
     return this.defense.snapshot(nowMs / 1000);
   }
 

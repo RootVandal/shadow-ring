@@ -60,7 +60,8 @@ export const CONFIG = {
     // the full penalty, beyond maxMs it's a push, not a punch.
     straight: { gate: 0.32, minForward: 0.2, maxDrop: 0.45, straightAngle: 140, goodMs: 280, slowMs: 460, maxMs: 560 },
     hook: { gate: 0.5, bentAngle: 135, minElbowLift: -0.45, goodMs: 340, slowMs: 560, maxMs: 700 },
-    upper: { gate: 0.45, bentAngle: 135, goodMs: 340, slowMs: 560, maxMs: 700 },
+    // maxDip: an uppercut starts from the chest, not the hip — raising a dropped hand isn't one (S below guard).
+    upper: { gate: 0.45, bentAngle: 135, goodMs: 340, slowMs: 560, maxMs: 700, maxDip: 1.1 },
 
     // Personal reference: a punch is "short" when it reaches less than this share
     // of what this player usually reaches (rolling 75th percentile).
@@ -69,6 +70,11 @@ export const CONFIG = {
     refDefault: { straight: 0.85, hook: 0.9, upper: 0.85 },
 
     nearMiss: 0.6, // share of the gate that still counts as an attempt
+    // Hit zone: a fist that ends this far (S) below its guard height goes to the body.
+    bodyDrop: 0.5,
+    // A straight that drops is a body shot only if it clearly goes forward too —
+    // otherwise it's a hand falling to the hip. × straight.minForward.
+    bodyForward: 2,
     otherHandDropRatio: 0.5,
   },
 
@@ -99,6 +105,16 @@ export const CONFIG = {
     persistMs: 600,
   },
 
+  // The prank pistol from the shop (motion/gun.js).
+  gun: {
+    minE: 0.55, // both arms extended
+    maxGap: 0.75, // S — fists together
+    minUp: -0.6, // S — fists roughly at shoulder height
+    maxUp: 1.0,
+    showSeconds: 0.15, // the gun appears
+    holdSeconds: 0.7, // …and fires
+  },
+
   cursor: {
     dwellMs: 1100,
     cooldownMs: 700,
@@ -117,12 +133,20 @@ export const CONFIG = {
     counterBonus: 1.3,
     myProjectileMs: 240,
     knockMs: 10000, // the timekeeper knocks 10 s before the bell
+    // A dodge counts if it happened anywhere in [impact − lookback, impact + late]:
+    // the camera and the pose model see the player ~100 ms late, and a slip that
+    // started a moment early is still a slip.
+    dodgeLookbackMs: 200,
+    dodgeLateMs: 80,
   },
 
   // Online fights on top of `fight`: a KO only ends the round, a short pause,
   // then both start the next round at full HP. Most rounds won takes the fight.
   onlineFight: {
     breakSeconds: 3,
+    // Network jitter on top: be more forgiving online.
+    dodgeLookbackMs: 300,
+    dodgeLateMs: 150,
     roundKo: true,
     resetHp: true,
   },

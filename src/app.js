@@ -114,6 +114,7 @@ export class App {
     this.screen?.exit();
     this.coach.clear();
     const S = SCREENS[name];
+    this.stage.covered = S.covers;
     this.screen = new S(this, params);
     this.screenName = name;
     this.screen.enter();

@@ -31,6 +31,7 @@ const CHANNEL = { straight: 'E', hook: 'inward', upper: 'up' };
  * @property {number} ms       duration from start of motion to full extension
  * @property {number} speed    goodMs / ms (≥ 1 is crisp)
  * @property {number} reach
+ * @property {'head'|'body'} zone  where the fist was at full extension
  * @property {number} t
  *
  * @typedef {object} AttemptEvent  a movement that looked like a punch but wasn't one
@@ -57,6 +58,7 @@ export class PunchTracker {
     this.state = 'ready';
     this.strike = null;
     this.recover = null;
+    this.lowFist = false; // after a body shot the fist rises back — that's not an uppercut
     this.live = { E: 0, vE: 0, vIn: 0, vUp: 0 };
   }
 
@@ -102,6 +104,8 @@ export class PunchTracker {
 
     const out = [];
     const reliable = arm.vis >= 0.3;
+    // Back at guard height and no longer rising: from here an upward move is a real uppercut again.
+    if (this.lowFist && this.base && arm.up > -this.base.rel.y - 0.1 && vUp < this.cfg.punch.trigger.vUp * 0.5) this.lowFist = false;
     if (this.state === 'ready') {
       if (reliable && this.#triggered(vE, vIn, vUp)) this.#open(s);
     } else if (this.state === 'strike') {
@@ -125,7 +129,7 @@ export class PunchTracker {
   #triggered(vE, vIn, vUp) {
     const tr = this.cfg.punch.trigger;
     const k = this.sens;
-    return vE > tr.vE * k || vIn > tr.vIn * k || vUp > tr.vUp * k;
+    return vE > tr.vE * k || vIn > tr.vIn * k || (!this.lowFist && vUp > tr.vUp * k);
   }
 
   #open(s) {
@@ -146,6 +150,7 @@ export class PunchTracker {
       at: { E: s, inward: s, up: s },
       frames: 0,
       otherDropped: 0,
+      lowFist: this.lowFist,
     };
     this.state = 'strike';
     this.#track(s);
@@ -180,12 +185,14 @@ export class PunchTracker {
     const angle = { straight: k.at.E.angle, hook: k.at.inward.angle, upper: k.at.up.angle };
     const score = {};
     for (const ty of PUNCH_TYPES) score[ty] = gain[ty] / (c[ty].gate * sens);
+    if (k.lowFist || (this.base && -this.base.rel.y - k.loAtPeak.up > c.upper.maxDip)) score.upper = 0;
 
     // A straight must actually come toward the camera, and not by dropping the
     // hand to the hip (the elbow straightens then too).
     const forward = k.at.E.F - k.loAtPeak.F;
     const dropped = k.at.E.up - k.start.up < -c.straight.maxDrop;
-    if (forward < c.straight.minForward * sens || dropped) score.straight = 0;
+    const minF = c.straight.minForward * sens;
+    if (forward < minF || (dropped && forward < minF * c.bodyForward)) score.straight = 0;
 
     const weighted = {
       straight: score.straight * (angle.straight >= c.straight.straightAngle ? 1.3 : 0.8),
@@ -216,6 +223,8 @@ export class PunchTracker {
       return { kind: 'attempt', side: this.side, type, reason: 'slow', t };
     }
 
+    const zone = this.#zone(type, k);
+    if (zone === 'body') this.lowFist = true;
     const faults = [];
     const reach = type === 'straight' ? k.peak.E : gain[type];
     const expected = this.#reference(type) * c.shortRatio;
@@ -229,7 +238,8 @@ export class PunchTracker {
     }
     if (type === 'hook') {
       if (angle.hook > spec.bentAngle) faults.push({ code: 'hook_straight_arm', penalty: 0.3 });
-      if (k.at.inward.lift < spec.minElbowLift) faults.push({ code: 'hook_low_elbow', penalty: 0.25 });
+      // A body hook is thrown with the elbow low on purpose.
+      if (zone === 'head' && k.at.inward.lift < spec.minElbowLift) faults.push({ code: 'hook_low_elbow', penalty: 0.25 });
     }
     if (type === 'upper' && angle.upper > spec.bentAngle) {
       faults.push({ code: 'upper_straight_arm', penalty: 0.3 });
@@ -240,7 +250,15 @@ export class PunchTracker {
     faults.sort((a, b) => b.penalty - a.penalty);
     this.#remember(type, reach);
     const quality = clamp(1 - faults.reduce((sum, f) => sum + f.penalty, 0), 0.2, 1);
-    return { kind: 'punch', side: this.side, type, quality, faults, ms, speed: goodMs / ms, reach, t };
+    return { kind: 'punch', side: this.side, type, quality, faults, ms, speed: goodMs / ms, reach, zone, t };
+  }
+
+  /** Head or body: how far below its own guard height the fist was at the peak. */
+  #zone(type, k) {
+    if (type === 'upper' || !this.base) return 'head';
+    const guardUp = -this.base.rel.y;
+    const up = k.at[CHANNEL[type]].up;
+    return guardUp - up > this.cfg.punch.bodyDrop ? 'body' : 'head';
   }
 
   /** Seconds from the moment the fist left its low point to the peak, for one channel. */

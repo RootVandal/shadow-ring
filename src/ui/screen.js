@@ -1,5 +1,8 @@
 /** Base for full-screen views: owns its DOM and its event subscriptions. */
 export class Screen {
+  /** True for screens that cover the 3D scene almost completely — it may render rarely underneath. */
+  static covers = false;
+
   /** @param {import('../app.js').App} app */
   constructor(app, params = {}) {
     this.app = app;

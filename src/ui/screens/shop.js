@@ -1,18 +1,21 @@
 import * as THREE from 'three';
 import { Screen } from '../screen.js';
 import { h, clear } from '../../util/dom.js';
-import { GLOVES, gloveById, wallet, buy, equip, redeem, WIN_REWARD } from '../../game/shop.js';
+import { GLOVES, SECRETS, gloveById, wallet, buy, equip, redeem, WIN_REWARD } from '../../game/shop.js';
 import { gloveMaterialFor, makeGlove, COLORS } from '../../render/materials.js';
 
 const money = (n) => `$${n.toLocaleString('ru-RU')}`;
 
-/** One tiny three.js scene that renders a spinning glove into any 2D canvas. */
+/**
+ * One tiny three.js scene that renders a spinning glove into any 2D canvas.
+ * A single instance for the whole game: every WebGL context is expensive, and
+ * browsers drop the oldest ones (the arena!) after ~16 — so it is never recreated.
+ */
 class GlovePreview {
-  constructor(size) {
-    this.size = size;
+  constructor() {
+    this.size = 0;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(1);
-    this.renderer.setSize(size, size, false);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(32, 1, 0.01, 10);
@@ -37,6 +40,10 @@ class GlovePreview {
   }
 
   draw(id, angle, canvas) {
+    if (this.size !== canvas.width) {
+      this.size = canvas.width;
+      this.renderer.setSize(this.size, this.size, false);
+    }
     const m = this.#mat(id);
     this.glove.traverse((o) => o.isMesh && o.material !== this.trim && (o.material = m));
     this.glove.rotation.y = angle;
@@ -47,26 +54,37 @@ class GlovePreview {
     g.drawImage(this.renderer.domElement, 0, 0, canvas.width, canvas.height);
   }
 
-  dispose() {
-    this.renderer.dispose();
-  }
 }
 
+let preview = null;
+const glovePreview = () => (preview ??= new GlovePreview());
+
+const CARD_FPS = 12; // the cards turn slowly, one card per frame
+const DETAIL_FPS = 30;
+
 export class ShopScreen extends Screen {
+  static covers = true;
+
   enter() {
     const { app } = this;
     app.stage.setMode('showcase');
     app.cursor.setEnabled(true);
-    this.small = new GlovePreview(240);
-    this.big = new GlovePreview(560);
+    this.preview = glovePreview();
     this.t = 0;
+    this.next = 0;
+    this.lastDetail = 0;
     this.moneyEl = h('div.money');
     this.grid = h('div.shop');
     this.promo = h('input', { maxlength: 20, placeholder: 'промокод', autocomplete: 'off', spellcheck: false });
     this.promoMsg = h('span.muted', '');
     const tryCode = () => {
       const g = redeem(this.promo.value);
-      if (g) {
+      if (g?.item) {
+        app.sfx.shot();
+        this.promoMsg.textContent = `Выдан: ${g.name}! ${g.desc}`;
+        this.promo.value = '';
+        this.#render();
+      } else if (g) {
         app.sfx.bell(1);
         this.promoMsg.textContent = `Открыто: ${g.name}!`;
         this.promo.value = '';
@@ -105,6 +123,8 @@ export class ShopScreen extends Screen {
   #render() {
     const w = wallet();
     this.moneyEl.textContent = money(w.money);
+    this.moneyEl.title = SECRETS.filter((s) => w[s.id]).map((s) => s.name).join(', ');
+    if (w.pistol) this.moneyEl.textContent += ' · 🔫';
     this.cards = GLOVES.map((g) => {
       const canvas = h('canvas', { width: 240, height: 240 });
       const status = w.equipped === g.id ? 'надето' : w.owned.includes(g.id) ? 'куплено' : g.code ? 'секретный код' : money(g.price);
@@ -115,9 +135,11 @@ export class ShopScreen extends Screen {
         h('b', g.name),
         h('span', status),
       );
-      return { g, canvas, el };
+      return { g, canvas, el, drawn: false };
     });
     clear(this.grid).append(...this.cards.map((c) => c.el));
+    // Every card gets a first picture right away; after that they turn in turns.
+    for (const [i, c] of this.cards.entries()) this.preview.draw(c.g.id, i * 1.3, c.canvas);
   }
 
   #open(id) {
@@ -173,13 +195,20 @@ export class ShopScreen extends Screen {
 
   frame(now, dt) {
     this.t += dt;
-    for (const [i, c] of (this.cards ?? []).entries()) this.small.draw(c.g.id, this.t * 1.2 + i * 1.3, c.canvas);
-    if (this.openId && this.bigCanvas?.isConnected) this.big.draw(this.openId, this.t * 0.8, this.bigCanvas);
-  }
-
-  exit() {
-    super.exit();
-    this.small.dispose();
-    this.big.dispose();
+    // The open glove turns smoothly; the cards behind it wait.
+    if (this.openId && this.bigCanvas?.isConnected) {
+      if (now - this.lastDetail >= 1000 / DETAIL_FPS - 2) {
+        this.lastDetail = now;
+        this.preview.draw(this.openId, this.t * 0.8, this.bigCanvas);
+      }
+      return;
+    }
+    const cards = this.cards ?? [];
+    if (!cards.length || this.app.stage.tier === 'lowest') return;
+    if (now < this.next) return;
+    this.next = now + 1000 / (CARD_FPS * cards.length);
+    this.turn = ((this.turn ?? -1) + 1) % cards.length;
+    const c = cards[this.turn];
+    this.preview.draw(c.g.id, this.t * 1.2 + this.turn * 1.3, c.canvas);
   }
 }

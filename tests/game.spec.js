@@ -190,7 +190,7 @@ test('online: a KO ends only the round; after a short break both are back at ful
   f.run(ONLINE.introSeconds * 1000 + 50);
   f.me.hp = 5;
   f.m.incoming({ id: 1, kind: 'cross', power: 20 }, 100, f.now);
-  f.run(200);
+  f.run(400);
   assert.equal(f.m.phase, 'break', 'not over — just the round');
   assert.equal(f.m.wins.foe, 1);
   assert.equal(f.m.lastRound.method, 'ko');
@@ -226,7 +226,7 @@ test('online: the follower is KO-ed but waits for the host to score the round', 
   f.m.applyPhase({ phase: 'round', round: 1, ms: 30000 }, f.now);
   f.me.hp = 5;
   f.m.incoming({ id: 1, kind: 'cross', power: 20 }, 100, f.now);
-  f.run(200);
+  f.run(400);
   assert.equal(f.m.phase, 'round');
   assert.ok(f.m.roundOver);
   assert.equal(f.m.throwPunch({ kind: 'jab', side: 'left', quality: 1 }, f.now), null, 'no punching while down');
@@ -235,6 +235,57 @@ test('online: the follower is KO-ed but waits for the host to score the round', 
   f.m.applyPhase({ phase: 'round', round: 2, ms: 45000 }, f.now);
   assert.equal(f.me.hp, 100);
   assert.ok(!f.m.roundOver);
+});
+
+test('zones: a body shot ignores slips and ducks, the guard covers it partly, and it drains stamina', () => {
+  const body = { kind: 'jab', power: 10, zone: 'body' };
+  assert.equal(resolveHit(body, SLIP).outcome, 'hit');
+  assert.equal(resolveHit(body, DUCK).outcome, 'hit');
+  assert.near(resolveHit(body, OPEN).damage, 7, 1e-9);
+  const guarded = resolveHit(body, FULL);
+  assert.equal(guarded.outcome, 'blocked');
+  assert.near(guarded.damage, 4.2, 1e-9);
+  assert.above(resolveHit(body, OPEN).drain, 0);
+  assert.equal(resolveHit({ kind: 'upper', power: 10, zone: 'body' }, SLIP).outcome, 'slipped', 'an uppercut is always to the head');
+});
+
+test('match: my body shot goes out marked as one', () => {
+  const f = fight();
+  f.m.start(0);
+  f.run(CONFIG.fight.introSeconds * 1000 + 50);
+  const a = f.m.throwPunch({ kind: 'hook', side: 'left', quality: 1, zone: 'body' }, f.now);
+  assert.equal(a.zone, 'body');
+});
+
+test('match: a slip a moment before impact still counts (grace window)', () => {
+  const f = fight({ defense: (now, windowMs) => [OPEN, SLIP] });
+  f.m.start(0);
+  f.run(CONFIG.fight.introSeconds * 1000 + 50);
+  f.m.incoming({ id: 1, kind: 'jab', power: 10 }, 300, f.now);
+  f.run(600);
+  assert.equal(f.log.find(([e]) => e === 'defended')[1].outcome, 'slipped');
+  assert.equal(f.me.hp, 100);
+});
+
+test('match: the best defense in the window wins — a duck beats a slip against a hook', () => {
+  const f = fight({ defense: () => [SLIP, DUCK] });
+  f.m.start(0);
+  f.run(CONFIG.fight.introSeconds * 1000 + 50);
+  f.m.incoming({ id: 1, kind: 'hook', power: 10 }, 300, f.now);
+  f.run(600);
+  assert.equal(f.log.find(([e]) => e === 'defended')[1].outcome, 'ducked');
+});
+
+test('match: the pistol ends the fight at once — only during a round', () => {
+  const f = fight({ rules: ONLINE });
+  f.m.start(0);
+  assert.ok(!f.m.shoot(f.now), 'not during the intro');
+  f.run(ONLINE.introSeconds * 1000 + 50);
+  assert.ok(f.m.shoot(f.now));
+  assert.equal(f.m.phase, 'over');
+  assert.equal(f.m.result.method, 'shot');
+  assert.equal(f.m.result.winner, 'me');
+  assert.ok(f.link.sent.some(([k, r]) => k === 'end' && r.method === 'shot'), 'the other side is told');
 });
 
 test('bot: a full fight against the Shadow finishes with a verdict', () => {

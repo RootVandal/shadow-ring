@@ -255,3 +255,75 @@ test('framing: standing off to one side is reported', () => {
   r.step(1.2);
   assert.equal(r.tracker.framing.issue, 'off_left');
 });
+
+test('zones: a jab at the face goes to the head, a low one to the body', () => {
+  const r = rig();
+  r.calibrate();
+  r.throw('left', 'jab');
+  r.throw('left', 'jabBody');
+  const p = r.of('punch');
+  assert.equal(p.map((x) => `${x.kind}:${x.zone}`).join(','), 'jab:head,jab:body');
+});
+
+test('zones: a body hook is not flagged for its low elbow', () => {
+  const r = rig();
+  r.calibrate();
+  r.throw('right', 'hookBody');
+  const p = r.of('punch');
+  assert.equal(p[0]?.kind, 'hook');
+  assert.equal(p[0].zone, 'body');
+  assert.ok(!p[0].faults.some((f) => f.code === 'hook_low_elbow'), `faults: ${p[0].faults.map((f) => f.code)}`);
+});
+
+test('zones: dropping the guard to the hip is still not a punch', () => {
+  const r = rig();
+  r.calibrate();
+  r.puppet.setBase('left', 'low');
+  r.step(1);
+  r.puppet.setBase('left', 'guard');
+  r.step(1);
+  assert.equal(r.of('punch').length, 0);
+});
+
+test('defense window: a slip that just ended still shows up in the last 300 ms', () => {
+  const r = rig();
+  r.calibrate();
+  r.puppet.slip(1);
+  r.step(0.4);
+  r.puppet.slip(0);
+  r.step(0.3);
+  assert.equal(r.tracker.defense.state.slip, null, 'back in the center now');
+  const recent = r.tracker.defenseAt(r.t * 1000, 400);
+  assert.ok(recent.some((d) => d.slip), 'but the slip is in the window');
+  assert.ok(!r.tracker.defenseAt(r.t * 1000, 400 - 400 + 50).some?.((d) => d.slip), 'and not in a tiny one');
+});
+
+test('pistol: both arms out with fists together, held — fires once', async () => {
+  const { GunGesture } = await import('../src/motion/gun.js');
+  const r = rig();
+  r.calibrate();
+  const gun = new GunGesture();
+  let fired = 0;
+  let aimed = false;
+  const watch = (s) => {
+    for (let i = 0; i < Math.round(s * 30); i++) {
+      r.step(1 / 30);
+      const g = gun.update(r.tracker.body, r.tracker.E, 1 / 30);
+      if (g.fire) fired++;
+      aimed ||= g.aiming;
+    }
+  };
+  watch(1);
+  assert.equal(fired, 0, 'not from the guard');
+  r.puppet.play('left', 'jab', r.t + 0.05);
+  r.puppet.play('right', 'jab', r.t + 0.3);
+  watch(1.2);
+  assert.equal(fired, 0, 'not from a jab–cross');
+  r.puppet.setBase('left', 'aim');
+  r.puppet.setBase('right', 'aim');
+  watch(1.5);
+  assert.ok(aimed, 'the gun shows');
+  assert.equal(fired, 1, 'one shot');
+  watch(2);
+  assert.equal(fired, 1, 'only one bullet');
+});

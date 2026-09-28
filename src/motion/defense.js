@@ -24,12 +24,14 @@ export class DefenseTracker {
     this.cfg = cfg;
     this.neutral = null;
     this.state = idleState();
+    this.history = []; // recent states, for judging a punch over a short window
   }
 
   /** @param {import('./calibration.js').Baseline} base */
   setBaseline(base) {
     this.neutral = { nose: { ...base.nose }, mid: { ...base.mid } };
     this.state = idleState();
+    this.history = [];
   }
 
   /**
@@ -81,22 +83,37 @@ export class DefenseTracker {
       n.mid.x += (body.mid.x - n.mid.x) * a;
       n.mid.y += (body.mid.y - n.mid.y) * a;
     }
+    this.history.push({ t: body.t, guard: st.guard, slip: st.slip, slipSince: st.slipSince, duck: st.duck, duckSince: st.duckSince });
+    while (this.history.length && this.history[0].t < body.t - 1) this.history.shift();
     return st;
+  }
+
+  /**
+   * Every defense the player showed in the last `window` seconds (plus now) —
+   * the caller picks the one that works best against the punch.
+   */
+  snapshots(now, window) {
+    const out = [this.snapshot(now)];
+    for (const h of this.history) if (h.t >= now - window && h.t <= now) out.push(judge(h, h.t, this.cfg));
+    return out;
   }
 
   /** Defense as it counts at the moment of impact (dodges expire). */
   snapshot(now) {
-    const st = this.state;
-    const fresh = this.cfg.dodge.freshMs / 1000;
-    return {
-      guard: st.guard,
-      slip: !!st.slip && now - st.slipSince <= fresh,
-      duck: st.duck && now - st.duckSince <= fresh,
-      slipStale: !!st.slip && now - st.slipSince > fresh,
-      duckStale: st.duck && now - st.duckSince > fresh,
-      slipDir: st.slip,
-    };
+    return judge(this.state, now, this.cfg);
   }
+}
+
+function judge(st, now, cfg) {
+  const fresh = cfg.dodge.freshMs / 1000;
+  return {
+    guard: st.guard,
+    slip: !!st.slip && now - st.slipSince <= fresh,
+    duck: st.duck && now - st.duckSince <= fresh,
+    slipStale: !!st.slip && now - st.slipSince > fresh,
+    duckStale: st.duck && now - st.duckSince > fresh,
+    slipDir: st.slip,
+  };
 }
 
 function idleState() {

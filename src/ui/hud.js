@@ -128,12 +128,14 @@ export class Hud {
   showTelegraph(attack, start, end, hint) {
     const ring = svgCircle(TG_R, 'ring');
     const svg = svg2(ring, svgCircle(22, 'target'));
-    const label = h('div.tg__label', KIND[attack.kind], hint && h('span.tg__hint', hint));
+    const body = attack.zone === 'body';
+    // Nothing but the guard helps against a body shot — the hint says so.
+    const label = h('div.tg__label', KIND[attack.kind], body && ' в корпус', (body ? 'БЛОК' : hint) && h('span.tg__hint', body ? 'БЛОК' : hint));
     const el = h('div.tg', svg, label);
     // The ring sits where the punch comes from: hooks from the side, uppercuts from below.
     const fromViewerRight = attack.side === 'left';
     const dx = attack.kind === 'hook' ? (fromViewerRight ? 1 : -1) * Math.min(260, window.innerWidth * 0.2) : 0;
-    const dy = attack.kind === 'upper' ? Math.min(160, window.innerHeight * 0.16) : 0;
+    const dy = attack.kind === 'upper' || body ? Math.min(body ? 220 : 160, window.innerHeight * (body ? 0.24 : 0.16)) : 0;
     el.style.left = `${dx}px`;
     el.style.top = `${dy}px`;
     this.telegraph.append(el);
@@ -183,8 +185,8 @@ export class Hud {
     this.coach.classList.add('is-on');
   }
 
-  showPunch(kind, quality, note, now) {
-    this.readoutKind.textContent = `${KIND[kind]} · ${Math.round(quality * 100)}%`;
+  showPunch(kind, quality, note, now, zone = 'head') {
+    this.readoutKind.textContent = `${KIND[kind]}${zone === 'body' ? ' в корпус' : ''} · ${Math.round(quality * 100)}%`;
     this.readoutBar.parentElement.style.setProperty('--q', quality.toFixed(2));
     this.readoutBar.parentElement.style.setProperty('--q-color', quality >= 0.8 ? '#8cc56f' : quality >= 0.55 ? '#f2c94c' : '#d8342c');
     this.readoutNote.textContent = note ?? '';
