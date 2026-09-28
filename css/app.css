@@ -1740,6 +1740,23 @@ p {
 
 /* ─── Small screens & phones ──────────────────────────────────────────── */
 
+/* Screens let touches through to the scene (#ui > * above), so a swipe on text
+   never reached them and long pages could not scroll on a phone. The fight HUD
+   is .hud, not .screen, so it is untouched. */
+@media (max-width: 900px), (pointer: coarse) {
+  #ui > .screen {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    pointer-events: auto;
+  }
+
+  /* centred content that is taller than the phone would lose its top */
+  .setup {
+    justify-content: safe center;
+  }
+}
+
 @media (max-width: 900px) {
   .tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
