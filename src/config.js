@@ -142,9 +142,13 @@ export const CONFIG = {
   },
 
   bot: {
-    easy: { interval: [2.6, 4.0], window: 850, combo: 0, defend: 0.25, smart: 0.5, guardUp: 0.45, damage: 0.55, reads: 0.2 },
-    normal: { interval: [2.0, 3.2], window: 700, combo: 0.25, defend: 0.42, smart: 0.7, guardUp: 0.6, damage: 0.7, reads: 0.5 },
-    hard: { interval: [1.3, 2.3], window: 560, combo: 0.45, defend: 0.58, smart: 0.85, guardUp: 0.7, damage: 0.85, reads: 0.8 },
+    // interval — pause between attacks (s), window — time to react (ms), windup — visible
+    // load before a punch (ms), combo/comboMax — chance and length of a series, defend/smart —
+    // chance to defend and to pick the right defense, counter — chance to answer right after
+    // defending, stunMs — how long a clean hit stops it, finisher — attacks faster when you're low.
+    easy: { interval: [3.0, 4.4], window: 950, windup: 480, combo: 0, comboMax: 0, defend: 0.15, smart: 0.4, guardUp: 0.35, damage: 0.5, quality: [0.6, 0.85], reads: 0, counter: 0, stunMs: 900, finisher: false },
+    normal: { interval: [1.8, 2.8], window: 700, windup: 340, combo: 0.35, comboMax: 2, defend: 0.45, smart: 0.7, guardUp: 0.6, damage: 0.9, quality: [0.75, 0.95], reads: 0.5, counter: 0.25, stunMs: 550, finisher: false },
+    hard: { interval: [1.0, 1.8], window: 470, windup: 200, combo: 0.7, comboMax: 4, defend: 0.7, smart: 0.92, guardUp: 0.8, damage: 1.1, quality: [0.88, 1], reads: 1, counter: 0.7, stunMs: 220, finisher: true },
   },
 
   net: {

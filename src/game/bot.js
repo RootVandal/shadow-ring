@@ -80,9 +80,14 @@ export class BotLink {
       if (res.drain) m.foe.stamina = Math.max(0, m.foe.stamina - res.drain);
       if (isLanded(res.outcome)) {
         this.animator?.hit(res.outcome === 'crit' ? 1 : 0.6, attack);
-        if (res.outcome === 'crit' || res.damage >= 10) this.stunnedUntil = t + 550;
+        if (res.outcome === 'crit' || res.damage >= 10) this.stunnedUntil = t + this.p.stunMs;
       } else if (res.outcome === 'blocked') {
         this.animator?.blocked(attack);
+      }
+      // It defended — the good ones punish right away, while your guard is open.
+      if (!isLanded(res.outcome) && m.phase === 'round' && this.rnd() < this.p.counter) {
+        this.nextAttackAt = Math.min(this.nextAttackAt, t + 120);
+        this.countering = true;
       }
       m.landed({ id: attack.id, outcome: res.outcome, damage: res.damage, hp: m.foe.hp }, t);
     });
@@ -135,7 +140,9 @@ export class BotLink {
   #attack(now) {
     const kind = this.#chooseKind();
     const side = kind === 'jab' ? 'left' : kind === 'cross' ? 'right' : this.rnd() < 0.5 ? 'left' : 'right';
-    const windup = Math.round(260 + this.p.window * 0.15);
+    // A counter comes with a shorter load: that's what makes it hard to read.
+    const windup = Math.round(this.p.windup * (this.countering ? 0.6 : 1));
+    this.countering = false;
     this.animator?.punch(kind, side, windup);
     // Punching opens the guard for a moment — that's the player's chance.
     this.guardUp = false;
@@ -144,17 +151,19 @@ export class BotLink {
     this.#at(now + windup, (t) => {
       const m = this.match;
       if (m.phase !== 'round' || t < this.stunnedUntil) return; // a hit interrupted the load
-      const quality = randRange(0.72, 1, this.rnd);
+      const quality = randRange(...this.p.quality, this.rnd);
       const attack = { id: ++this.seq, kind, side, quality, power: attackPower({ kind, quality }) * this.p.damage };
       m.incoming(attack, this.p.window, t);
     });
     if (this.comboLeft > 0) {
       this.comboLeft--;
-      this.nextAttackAt = now + windup + randRange(420, 560, this.rnd);
+      this.nextAttackAt = now + windup + randRange(320, 480, this.rnd);
     } else {
-      this.comboLeft = this.rnd() < this.p.combo ? (this.rnd() < 0.4 ? 2 : 1) : 0;
+      this.comboLeft = this.rnd() < this.p.combo ? 1 + Math.floor(this.rnd() * this.p.comboMax) : 0;
       const [a, b] = this.p.interval;
-      this.nextAttackAt = now + windup + randRange(a, b, this.rnd) * 1000;
+      // Smells blood: when you're low, the hard Shadow doesn't let you breathe.
+      const pressure = this.p.finisher && this.match.me.hp < 40 ? 0.65 : 1;
+      this.nextAttackAt = now + windup + randRange(a, b, this.rnd) * 1000 * pressure;
     }
   }
 }
