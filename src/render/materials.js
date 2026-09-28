@@ -202,6 +202,125 @@ const cosmicTexture = (glow) =>
     }
   });
 
+// ── Трусы (game/shop.js → SHORTS) ──────────────────────────────────────
+// Текстура оборачивается вокруг трусов-цилиндра: центр картинки (x = 256) — спереди.
+
+function shortsTex(key, draw) {
+  if (texCache.has(key)) return texCache.get(key);
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 128;
+  draw(c.getContext('2d'));
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = THREE.RepeatWrapping;
+  t.offset.x = 0.5; // середина картинки — на животе
+  texCache.set(key, t);
+  return t;
+}
+
+const SHORTS_DRAW = {
+  // Кожа манекена, розовые стринги с кружевной кромкой.
+  thong(g) {
+    g.fillStyle = '#1d1e26';
+    g.fillRect(0, 0, 512, 128);
+    g.fillStyle = '#ff5fa8';
+    g.fillRect(0, 0, 512, 16);
+    g.beginPath();
+    g.moveTo(206, 16);
+    g.lineTo(306, 16);
+    g.lineTo(262, 128);
+    g.lineTo(250, 128);
+    g.closePath();
+    g.fill();
+    g.fillStyle = '#ffd1e6';
+    for (let x = 0; x < 512; x += 10) {
+      g.beginPath();
+      g.arc(x + 5, 16, 4, 0, Math.PI);
+      g.fill();
+    }
+  },
+  // Серые, со слоником спереди: голова, уши, хобот вниз.
+  elephant(g) {
+    g.fillStyle = '#8e97a3';
+    g.fillRect(0, 0, 512, 128);
+    g.fillStyle = '#6f7885';
+    for (const x of [214, 298]) {
+      g.beginPath();
+      g.ellipse(x, 58, 30, 36, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.fillStyle = '#c3cad3';
+    g.beginPath();
+    g.arc(256, 52, 32, 0, Math.PI * 2);
+    g.fill();
+    g.strokeStyle = '#c3cad3';
+    g.lineWidth = 16;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(256, 70);
+    g.quadraticCurveTo(252, 110, 272, 118);
+    g.stroke();
+    g.fillStyle = '#20242c';
+    for (const x of [244, 268]) {
+      g.beginPath();
+      g.arc(x, 46, 4.5, 0, Math.PI * 2);
+      g.fill();
+    }
+  },
+  // Леопард: пятна-розетки на охре.
+  leopard(g) {
+    g.fillStyle = '#d9a44a';
+    g.fillRect(0, 0, 512, 128);
+    let a = 5;
+    const rnd = () => ((a = (a * 1664525 + 1013904223) >>> 0) / 4294967296);
+    for (let i = 0; i < 70; i++) {
+      const x = rnd() * 512;
+      const y = rnd() * 128;
+      const r = 7 + rnd() * 6;
+      g.fillStyle = '#8a5a1c';
+      g.beginPath();
+      g.ellipse(x, y, r, r * 0.8, rnd() * 3, 0, Math.PI * 2);
+      g.fill();
+      g.strokeStyle = '#1b120a';
+      g.lineWidth = 3.5;
+      g.beginPath();
+      g.ellipse(x, y, r, r * 0.8, rnd() * 3, 0.3, Math.PI * 1.6);
+      g.stroke();
+    }
+  },
+  // Чёрные с белой надписью I'LL WIN и красными лампасами.
+  iwin(g) {
+    g.fillStyle = '#141416';
+    g.fillRect(0, 0, 512, 128);
+    g.fillStyle = '#d8342c';
+    for (const x of [120, 384]) g.fillRect(x - 6, 0, 12, 128);
+    g.fillStyle = '#f5f1e8';
+    g.font = '900 34px Arial Black, Impact, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText("I'LL WIN", 256, 66);
+  },
+  // Красные с белой надписью.
+  supreme(g) {
+    g.fillStyle = '#d0141e';
+    g.fillRect(0, 0, 512, 128);
+    g.fillStyle = '#fff';
+    for (const x of [120, 384]) g.fillRect(x - 3, 0, 6, 128);
+    g.font = 'italic 900 38px Futura, Arial Black, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('Supreme', 256, 66);
+  },
+};
+
+/** Материал трусов; 'classic' — цвет угла. */
+export function shortsMaterialFor(id, corner) {
+  const draw = SHORTS_DRAW[id];
+  if (!draw) return new THREE.MeshStandardMaterial({ color: cornerColor(corner), roughness: 0.5 });
+  return new THREE.MeshStandardMaterial({ map: shortsTex(`shorts-${id}`, draw), roughness: id === 'supreme' ? 0.35 : 0.6 });
+}
+
 /** Shop gloves (game/shop.js); 'classic' takes the corner's color. */
 export function gloveMaterialFor(id, corner) {
   const phys = (o) => new THREE.MeshPhysicalMaterial({ roughness: 0.34, clearcoat: 0.7, clearcoatRoughness: 0.3, ...o });

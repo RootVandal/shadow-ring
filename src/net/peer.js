@@ -11,7 +11,7 @@ import { CONFIG } from '../config.js';
 // 3: hit zones (atk.zone), the dodge window
 export const PROTOCOL = 3;
 /** What the other side sees of us besides the skeleton (shop gloves). */
-export const profile = { glove: 'classic', title: null, rank: null };
+export const profile = { glove: 'classic', title: null, rank: null, shorts: 'classic' };
 const ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 
 export class NetError extends Error {
@@ -191,7 +191,7 @@ function connect(peer, targetId) {
 
 /** Joiner side of the handshake: say hello, expect hello (or busy) back. */
 async function greet(wire, name) {
-  wire.send('hello', { v: PROTOCOL, name, glove: profile.glove, title: profile.title, rank: profile.rank });
+  wire.send('hello', { v: PROTOCOL, name, glove: profile.glove, title: profile.title, rank: profile.rank, shorts: profile.shorts });
   const reply = await Promise.race([waitFor(wire, 'hello', 6000), waitFor(wire, 'busy', 6000).then(() => Promise.reject(new NetError('busy')))]);
   if (reply.v !== PROTOCOL) throw new NetError('version');
   return reply;
@@ -214,7 +214,7 @@ function acceptOne(peer, name, isTaken = () => false) {
           return;
         }
         paired = true;
-        wire.send('hello', { v: PROTOCOL, name, glove: profile.glove, title: profile.title, rank: profile.rank });
+        wire.send('hello', { v: PROTOCOL, name, glove: profile.glove, title: profile.title, rank: profile.rank, shorts: profile.shorts });
         resolve({ wire, hello: m });
       });
     });

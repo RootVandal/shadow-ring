@@ -8,7 +8,7 @@ import { Coach, roundTalk, verdict } from '../src/game/coach.js';
 import { scoreOf, leaderboard } from '../src/game/records.js';
 import { mulberry32 } from '../src/util/math.js';
 import { CONFIG } from '../src/config.js';
-import { GLOVES, hashCode, TITLES, titleById, gloveById, buy, redeem } from '../src/game/shop.js';
+import { GLOVES, hashCode, TITLES, titleById, gloveById, buy, redeem, SHORTS, shortsById } from '../src/game/shop.js';
 import { rankOf, winsToNext, nextState, TOP, RANKS } from '../src/game/ranked.js';
 import { voiceScore } from '../src/audio/voice.js';
 
@@ -461,4 +461,15 @@ test('shop: the RANKED code unlocks every rank glove at once', () => {
   assert.ok(r && Array.isArray(r.pack));
   assert.equal(r.pack.length, RANKS.filter((x) => x.glove).length);
   for (const id of r.pack) assert.ok(gloveById(id).rank, id);
+});
+
+test('shop: six shorts, prices differ, an unknown id from the opponent falls back to classic', () => {
+  const price = Object.fromEntries(SHORTS.map((s) => [s.id, s.price]));
+  assert.equal(SHORTS.length, 6);
+  assert.equal(price.classic, 0);
+  assert.below(price.thong, price.elephant);
+  assert.below(price.iwin, price.supreme);
+  assert.equal(shortsById('leopard').name, 'Леопардовые');
+  assert.equal(shortsById('<img>').id, 'classic');
+  assert.equal(shortsById(undefined).id, 'classic');
 });

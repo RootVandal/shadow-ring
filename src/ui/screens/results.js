@@ -180,7 +180,7 @@ export class ResultsScreen extends Screen {
     if (!this.meAgain || !this.peerAgain) return;
     const { params } = this;
     this.keepLink = true;
-    this.app.go('fight', { mode: 'online', link: this.link, role: params.role, foeName: params.foeName, foeGlove: params.foeGlove, foeTitle: params.foeTitle, foeRank: params.foeRank, quick: params.quick, ranked: params.ranked });
+    this.app.go('fight', { mode: 'online', link: this.link, role: params.role, foeName: params.foeName, foeGlove: params.foeGlove, foeShorts: params.foeShorts, foeTitle: params.foeTitle, foeRank: params.foeRank, quick: params.quick, ranked: params.ranked });
   }
 
   /** Что стало с рангом после рейтингового боя. */

@@ -3,7 +3,7 @@ import { Screen } from '../screen.js';
 import { tile } from './menu.js';
 import { h, clear, mmss } from '../../util/dom.js';
 import { hostRoom, joinRoom, quickMatch, profile } from '../../net/peer.js';
-import { wallet, titleById, isOneHit } from '../../game/shop.js';
+import { wallet, titleById, isOneHit, shortsById } from '../../game/shop.js';
 import { ranked, unlocked, rankOf, winsToNext, TOP } from '../../game/ranked.js';
 import { rankBadge } from '../rank.js';
 import { CONFIG } from '../../config.js';
@@ -30,6 +30,7 @@ export class LobbyScreen extends Screen {
     this.abort = new AbortController();
     profile.glove = wallet().equipped;
     profile.title = wallet().title;
+    profile.shorts = wallet().shorts;
     profile.rank = unlocked() ? ranked().step : null;
     this.body = h('div', { style: { display: 'grid', gap: '22px', alignContent: 'start' } });
     this.mount(
@@ -221,7 +222,7 @@ export class LobbyScreen extends Screen {
       ),
     );
     app.voice.say(`Соперник найден: ${foeName}`);
-    this.later(1800, () => app.go('fight', { mode: 'online', link, role, foeName, foeGlove: String(hello.glove || 'classic'), foeTitle: titleById(hello.title)?.id ?? null, foeRank: Number.isInteger(hello.rank) && hello.rank >= 0 && hello.rank <= TOP ? hello.rank : null, quick: this.mode === 'quick', ranked: this.mode === 'ranked' }));
+    this.later(1800, () => app.go('fight', { mode: 'online', link, role, foeName, foeGlove: String(hello.glove || 'classic'), foeShorts: shortsById(hello.shorts).id, foeTitle: titleById(hello.title)?.id ?? null, foeRank: Number.isInteger(hello.rank) && hello.rank >= 0 && hello.rank <= TOP ? hello.rank : null, quick: this.mode === 'quick', ranked: this.mode === 'ranked' }));
   }
 
   #fail(e) {

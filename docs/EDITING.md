@@ -33,6 +33,7 @@ python tools/serve.py        # запуск: http://localhost:8080
 | Титулы (название, цена, описание) | `src/game/shop.js` → `TITLES` | вид надписи — классы `.title--<id>` в `css/app.css` |
 | Рейтинг: сколько побед на ступень, когда открывается | `src/config.js` → `ranked` | `winsBase`, `winsStep`, `unlockAfter`, `lossStars` |
 | Ранги и какие перчатки за них | `src/game/ranked.js` → `RANKS`, перчатки — `GLOVES` с полем `rank` | вид значка — `.rank--<id>` в `css/app.css` |
+| Трусы (название, цена, описание) | `src/game/shop.js` → `SHORTS` | рисунок — `SHORTS_DRAW` в `src/render/materials.js` (центр картинки — спереди) |
 | Награда за онлайн-победу | `src/game/shop.js` → `WIN_REWARD` | |
 | Музыка | `src/audio/music.js` | темп `BPM`, ритм — массивы `KICK`, `SNARE`, `HAT` |
 | Звуки ударов, гонг | `src/audio/sfx.js` | |

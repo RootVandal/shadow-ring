@@ -80,6 +80,41 @@ export const TITLES = [
   { id: 'vip', name: 'VIP золотой', price: 500000, desc: 'Самый дорогой титул в игре. Переливается золотом — видно издалека.' },
 ];
 
+// ТРУСЫ: видны на манекене — соперник онлайн видит их на тебе. Вид — render/materials.js (shortsMaterialFor).
+export const SHORTS = [
+  { id: 'classic', name: 'Классические', price: 0, desc: 'Трусы цвета твоего угла. Скромно и по делу.' },
+  { id: 'thong', name: 'Смешные стринги', price: 500, desc: 'Розовые, с кружевом. Соперник смеётся — и пропускает удар.' },
+  { id: 'elephant', name: 'Со слоником', price: 1200, desc: 'Серый слоник спереди, хобот вниз. Самые милые трусы на ринге.' },
+  { id: 'leopard', name: 'Леопардовые', price: 1800, desc: 'Дикий принт для дикого боя. Хищник видно издалека.' },
+  { id: 'iwin', name: 'I\'ll win', price: 2500, desc: 'Чёрные с надписью «I\'LL WIN» спереди. Обещание, которое надо сдержать.' },
+  { id: 'supreme', name: 'Supreme красные', price: 7500, desc: 'Красные, с белой надписью. Самые дорогие трусы в игре — дороже только понты.' },
+];
+
+/** Трусы по id; неизвестные (от соперника) — классические. */
+export const shortsById = (id) => SHORTS.find((s) => s.id === id) ?? SHORTS[0];
+
+/** Купить трусы (и сразу надеть). @returns {{ok:boolean, reason?:'owned'|'money'}} */
+export function buyShorts(id) {
+  const w = read();
+  const s = shortsById(id);
+  if (w.shortsOwned.includes(s.id)) return { ok: false, reason: 'owned' };
+  if (w.money < s.price) return { ok: false, reason: 'money' };
+  w.money -= s.price;
+  w.shortsOwned.push(s.id);
+  w.shorts = s.id;
+  save('wallet', w);
+  return { ok: true };
+}
+
+/** Надеть купленные трусы. */
+export function wearShorts(id) {
+  const w = read();
+  if (!w.shortsOwned.includes(id)) return false;
+  w.shorts = id;
+  save('wallet', w);
+  return true;
+}
+
 /** Титул по id или null (неизвестные id от соперника тоже дают null). */
 export const titleById = (id) => TITLES.find((t) => t.id === id) ?? null;
 
@@ -105,6 +140,8 @@ function read() {
     codes: Array.isArray(w?.codes) ? w.codes : [],
     titles: Array.isArray(w?.titles) ? w.titles : [],
     title: typeof w?.title === 'string' ? w.title : null,
+    shortsOwned: Array.isArray(w?.shortsOwned) ? w.shortsOwned : ['classic'],
+    shorts: typeof w?.shorts === 'string' ? w.shorts : 'classic',
   };
 }
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { rimMaterial, gloveMaterial, gloveMaterialFor, makeGlove, cornerColor, COLORS } from './materials.js';
+import { rimMaterial, gloveMaterial, gloveMaterialFor, makeGlove, cornerColor, COLORS, shortsMaterialFor } from './materials.js';
 import { GUARD } from './poses.js';
 import { expAlpha } from '../util/math.js';
 
@@ -103,6 +103,15 @@ export class Avatar {
     for (const g of Object.values(this.gloves)) g.traverse((o) => o.material === this.gloveMat && (o.material = next));
     this.gloveMat.dispose();
     this.gloveMat = next;
+  }
+
+  /** Трусы из магазина ('classic' = цвет угла). */
+  setShorts(id = 'classic') {
+    if ((this.shortsId ?? 'classic') === id) return;
+    this.shortsId = id;
+    const old = this.parts.shorts.material;
+    this.parts.shorts.material = shortsMaterialFor(id, this.corner);
+    old.dispose();
   }
 
   /**

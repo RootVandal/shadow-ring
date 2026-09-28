@@ -47,6 +47,7 @@ export class FightScreen extends Screen {
     this.foeGlove = this.online ? params.foeGlove ?? 'classic' : 'classic';
     app.stage.gloves.setGlove(this.myGlove);
     app.stage.foe.setGlove(this.foeGlove);
+    app.stage.foe.setShorts(this.online ? params.foeShorts ?? 'classic' : 'classic');
     if (this.online) {
       this.link = params.link;
       app.foeDriver = (now, dt) => (this.koAnim ? this.koAnim.update(dt) : this.link.poseAt(now));
@@ -391,6 +392,7 @@ export class FightScreen extends Screen {
       level: this.params.level,
       foeName: this.foe.name,
       foeGlove: this.params.foeGlove,
+      foeShorts: this.params.foeShorts,
       foeTitle: this.params.foeTitle,
       foeRank: this.params.foeRank,
       quick: this.params.quick,
@@ -410,6 +412,7 @@ export class FightScreen extends Screen {
   exit() {
     super.exit();
     this.app.stage.foe.setGlove('classic');
+    this.app.stage.foe.setShorts('classic');
     const { app } = this;
     app.foeDriver = null;
     app.tracker.warnGuard = false;
