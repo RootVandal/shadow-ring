@@ -28,6 +28,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # The build stamp index.html checks to get past the 10-minute cache (see its loader).
+      - name: Write version.json
+        run: |
+          files=$(find src -type f -name '*.js' | sort | jq -R . | jq -sc .)
+          echo "{\"v\":\"$GITHUB_SHA\",\"files\":$files}" > version.json
+          head -c 300 version.json
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
