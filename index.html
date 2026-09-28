@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e0d0c">
+  <title>Бой с тенью — бокс через веб-камеру</title>
+  <meta name="description" content="Бокс, которым управляешь телом через обычную веб-камеру. Онлайн-бои с живым соперником и тренер, который замечает ошибки техники.">
+  <meta property="og:title" content="Бой с тенью">
+  <meta property="og:description" content="Бокс через веб-камеру: бьёшь по-настоящему, соперник — живой человек, тренер видит каждую ошибку.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Dela+Gothic+One&family=JetBrains+Mono:wght@500;700&family=Onest:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/three.module.js",
+        "@mediapipe/tasks-vision": "./vendor/mediapipe/vision_bundle.mjs",
+        "qrcode": "./vendor/qrcode/qrcode.mjs"
+      }
+    }
+  </script>
+  <link rel="modulepreload" href="vendor/three/three.module.js">
+</head>
+<body>
+  <canvas id="stage" aria-hidden="true"></canvas>
+  <main id="ui" aria-live="polite"></main>
+  <noscript><p class="noscript">Для игры нужен JavaScript.</p></noscript>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

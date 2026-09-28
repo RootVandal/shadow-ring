@@ -1,0 +1,12 @@
+{
+  "name": "shadow-ring",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Бой с тенью — бокс через веб-камеру: удары жестами, онлайн-спарринг, тренер, который видит ошибки техники",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve -l 8080 .",
+    "test": "node tests/run-node.mjs"
+  },
+  "license": "MIT"
+}

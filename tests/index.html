@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Тесты · Бой с тенью</title>
+  <style>
+    body { margin: 0; padding: 24px 16px; background: #0e0d0c; color: #efe8da; font: 14px/1.5 ui-monospace, "JetBrains Mono", Consolas, monospace; }
+    h1 { font-size: 16px; margin: 0 0 16px; }
+    li { list-style: none; padding: 2px 0; }
+    .ok::before { content: "ok   "; color: #8fc27a; }
+    .fail::before { content: "FAIL "; color: #e2574c; }
+    .fail small { display: block; margin-left: 5ch; color: #b9b1a2; white-space: pre-wrap; }
+    #sum { margin-top: 16px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Бой с тенью — тесты</h1>
+  <ul id="out"></ul>
+  <div id="sum">…</div>
+  <script type="module">
+    import { run } from './t.js';
+    import './motion.spec.js';
+    import './game.spec.js';
+    import './net.spec.js';
+
+    const out = document.getElementById('out');
+    const { passed, failed } = await run(({ name, ok, error }) => {
+      const li = document.createElement('li');
+      li.className = ok ? 'ok' : 'fail';
+      li.textContent = name;
+      if (!ok) {
+        const s = document.createElement('small');
+        s.textContent = error.stack || error.message;
+        li.append(s);
+      }
+      out.append(li);
+    });
+    const sum = document.getElementById('sum');
+    sum.textContent = `${passed} passed, ${failed} failed`;
+    document.title = `${failed ? '✗' : '✓'} ${passed}/${passed + failed} · тесты`;
+    window.__results = { passed, failed };
+  </script>
+</body>
+</html>
