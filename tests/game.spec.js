@@ -276,18 +276,6 @@ test('match: the best defense in the window wins — a duck beats a slip against
   assert.equal(f.log.find(([e]) => e === 'defended')[1].outcome, 'ducked');
 });
 
-test('match: the pistol ends the fight at once — only during a round', () => {
-  const f = fight({ rules: ONLINE });
-  f.m.start(0);
-  assert.ok(!f.m.shoot(f.now), 'not during the intro');
-  f.run(ONLINE.introSeconds * 1000 + 50);
-  assert.ok(f.m.shoot(f.now));
-  assert.equal(f.m.phase, 'over');
-  assert.equal(f.m.result.method, 'shot');
-  assert.equal(f.m.result.winner, 'me');
-  assert.ok(f.link.sent.some(([k, r]) => k === 'end' && r.method === 'shot'), 'the other side is told');
-});
-
 test('bot: a full fight against the Shadow finishes with a verdict', () => {
   const rnd = mulberry32(3);
   const me = new Fighter({ name: 'Я', corner: 'red' });

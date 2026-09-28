@@ -85,16 +85,6 @@ export class Sfx {
     this.#noise(t, { type: 'lowpass', freq: 520, peak: 0.45, decay: 0.1 });
   }
 
-  /** The prank pistol: a sharp crack, a low boom and the hall's echo. */
-  shot() {
-    if (!this.ready) return;
-    const t = this.ctx.currentTime;
-    this.#noise(t, { type: 'highpass', freq: 1800, peak: 1, attack: 0.001, decay: 0.05 });
-    this.#noise(t, { type: 'lowpass', freq: 700, peak: 0.9, attack: 0.002, decay: 0.35 });
-    this.#tone(t, { freq: 110, to: 38, peak: 1, attack: 0.002, decay: 0.3 });
-    this.#noise(t + 0.09, { type: 'bandpass', freq: 900, q: 0.6, peak: 0.25, attack: 0.02, decay: 0.8 });
-  }
-
   whoosh() {
     if (!this.ready) return;
     const t = this.ctx.currentTime;

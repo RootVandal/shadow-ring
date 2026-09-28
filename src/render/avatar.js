@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { rimMaterial, gloveMaterial, gloveMaterialFor, makeGlove, cornerColor, COLORS } from './materials.js';
 import { GUARD } from './poses.js';
-import { makePistol, fireFlash, updateFlash } from './pistol.js';
 import { expAlpha } from '../util/math.js';
 
 // A boxer-mannequin driven by a JointSet (see vision/landmarks.js JOINTS).
@@ -94,19 +93,6 @@ export class Avatar {
     this.flash = 0;
     this.t = 0;
     this.world = { head: new THREE.Vector3(), body: new THREE.Vector3(), lGlove: new THREE.Vector3(), rGlove: new THREE.Vector3() };
-    // The prank pistol in the right glove (glove space: +z along the knuckles).
-    this.pistol = makePistol();
-    this.pistol.scale.setScalar(1.3); // the glove is already ×1.18; seen barrel-first it has to be big to read
-    this.pistol.position.set(0, 0.075, 0.03);
-    this.pistol.visible = false;
-    this.gloves.r.add(this.pistol);
-    this.gun = false;
-  }
-
-  /** The opponent fires (their end of the prank). */
-  fire(now = performance.now()) {
-    this.gun = true;
-    fireFlash(this.pistol, now, 120);
   }
 
   /** The opponent's gloves from the shop ('classic' = corner color). */
@@ -127,7 +113,6 @@ export class Avatar {
     this.drop = pose.drop ?? 0;
     this.lateral = pose.lateral ?? 0;
     this.fall = pose.fall ?? 0;
-    this.gun = !!pose.gun || (this.pistol.userData.flashUntil ?? 0) > performance.now() - 400;
     if (pose.flash !== undefined) this.flash = Math.max(this.flash * 0.9, pose.flash);
   }
 
@@ -217,9 +202,6 @@ export class Avatar {
       const aim = knuckles.lengthSq() > 1e-6 ? knuckles.normalize().lerp(dirFore, 0.5).normalize() : dirFore;
       glove.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), aim);
     }
-
-    this.pistol.visible = this.gun;
-    if (this.gun) updateFlash(this.pistol, performance.now());
 
     // Head: from the ears' midpoint relative to the shoulders; face toward the nose.
     const ears = v3(J.lEar).add(v3(J.rEar)).multiplyScalar(0.5);

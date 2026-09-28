@@ -174,14 +174,6 @@ export class Match extends Emitter {
     this.emit('pause', paused);
   }
 
-  /** The prank pistol: one shot, the fight is over. */
-  shoot(now) {
-    if (this.phase !== 'round' || this.paused) return false;
-    this.foe.hp = 0;
-    this.#finish({ winner: 'me', method: 'shot' }, now);
-    return true;
-  }
-
   forfeit(now) {
     this.#finish({ winner: 'foe', method: 'forfeit' }, now);
   }
