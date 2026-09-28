@@ -8,7 +8,7 @@ import { CONFIG } from '../config.js';
 // server of our own — the site stays a static folder.
 
 // 2: online fights are three rounds, a KO ends only the round
-// 3: hit zones (atk.zone), the dodge window, the pistol (pose.g, end method 'shot')
+// 3: hit zones (atk.zone), the dodge window
 export const PROTOCOL = 3;
 /** What the other side sees of us besides the skeleton (shop gloves). */
 export const profile = { glove: 'classic' };

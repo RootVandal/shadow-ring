@@ -39,10 +39,6 @@ export class FightScreen extends Screen {
     this.foeGlove = this.online ? params.foeGlove ?? 'classic' : 'classic';
     app.stage.gloves.setGlove(this.myGlove);
     app.stage.foe.setGlove(this.foeGlove);
-    // The prank pistol (a promo code in the shop): in the right glove from the
-    // first second — the opponent sees it too — and one shot on a button.
-    this.gun = wallet().pistol;
-    app.stage.gloves.setGun(this.gun);
     if (this.online) {
       this.link = params.link;
       app.foeDriver = (now, dt) => (this.koAnim ? this.koAnim.update(dt) : this.link.poseAt(now));
@@ -67,16 +63,6 @@ export class FightScreen extends Screen {
     this.hud.pipSlot.append(this.pip.el);
     const quit = h('button.btn.btn--ghost.btn--small', { style: { position: 'absolute', right: 'var(--gutter)', top: '118px' }, onclick: () => m.forfeit(performance.now()) }, 'Сдаться');
     this.hud.el.append(quit);
-    if (this.gun) {
-      this.fireBtn = h('button.btn.btn--small.fire-btn', { onclick: () => this.#trigger(performance.now()) }, 'Выстрел', h('small', 'пробел'));
-      this.hud.el.append(this.fireBtn);
-      this.onKey = (e) => {
-        if (e.code !== 'Space' || e.repeat || e.target instanceof HTMLInputElement) return;
-        e.preventDefault();
-        this.#trigger(performance.now());
-      };
-      window.addEventListener('keydown', this.onKey);
-    }
     if (this.online) this.#foeCam();
     this.mount(this.hud.el);
 
@@ -125,24 +111,9 @@ export class FightScreen extends Screen {
       this.poseIn -= dt;
       if (this.poseIn <= 0) {
         this.poseIn = 1 / CONFIG.net.poseHz;
-        this.link.sendPose(app.tracker.lastFrame, def, this.gun);
+        this.link.sendPose(app.tracker.lastFrame, def);
       }
     }
-  }
-
-  /** The button (or Space): bang — only while a round is on. The match ends; #over does the rest. */
-  #trigger(now) {
-    const m = this.match;
-    if (!this.gun || m.phase !== 'round' || m.roundOver || m.paused) return;
-    const { app } = this;
-    this.fireBtn?.remove();
-    const head = app.stage.foe.world.head.clone();
-    app.sfx.shot();
-    app.stage.gloves.fire(now);
-    app.stage.fx.shake = Math.max(app.stage.fx.shake, 0.7);
-    app.stage.fx.burst(head, { scale: 0.9, now, tint: 0xffe2a8 });
-    app.stage.fx.sweat(head, now, 30);
-    this.match.shoot(now);
   }
 
   /** The opponent's webcam, top left under my plate — if they share it. */
@@ -173,7 +144,6 @@ export class FightScreen extends Screen {
       hud.callout(this.me.name, 'красный угол', 1300);
       this.later(1350, () => hud.callout(this.foe.name, 'синий угол', 1300));
       this.later(2700, () => hud.callout('Руки к лицу', 'прими стойку', 1300));
-      if (this.gun) app.coach.tip('pistol', { kind: 'info', text: 'Пистолет в правой руке: кнопка «Выстрел» или пробел. Один патрон.' });
       app.voice.say(`${this.me.name} против ${this.foe.name}`);
     } else if (phase === 'round') {
       hud.hideCorner();
@@ -382,14 +352,6 @@ export class FightScreen extends Screen {
     } else if (result.method === 'forfeit') {
       title = win ? 'Победа' : 'Бой остановлен';
       small = win ? 'соперник покинул ринг' : null;
-    } else if (result.method === 'shot') {
-      title = win ? 'Застрелил!' : 'Застрелен';
-      small = win ? 'один патрон — один бой' : 'у соперника был пистолет';
-      if (!win) {
-        app.sfx.shot();
-        app.stage.foe.fire(now);
-        app.stage.fx.hurt(1);
-      }
     } else if (result.method === 'rounds') {
       title = result.winner === 'draw' ? 'Ничья' : win ? 'Победа' : 'Поражение';
       small = `по раундам ${result.wins.me} : ${result.wins.foe}`;
@@ -409,9 +371,6 @@ export class FightScreen extends Screen {
     const left = match.phase === 'round' || result.method === 'ko' ? match.timeLeft(now) / 1000 : 0;
     const secondsLeft = result.method === 'ko' ? (rules.rounds - match.round) * rules.roundSeconds + left : 0;
     const koSeconds = result.method === 'ko' ? inRound + rules.roundSeconds - left : null;
-    this.gun = false;
-    this.fireBtn?.remove();
-    app.stage.gloves.setGun(false);
     const payload = {
       report: this.stats.report(),
       result,
@@ -433,8 +392,6 @@ export class FightScreen extends Screen {
   exit() {
     super.exit();
     this.app.stage.foe.setGlove('classic');
-    this.app.stage.gloves.setGun(false);
-    if (this.onKey) window.removeEventListener('keydown', this.onKey);
     const { app } = this;
     app.foeDriver = null;
     app.tracker.warnGuard = false;

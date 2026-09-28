@@ -51,11 +51,7 @@ export class ResultsScreen extends Screen {
     const how =
       result.method === 'ko'
         ? `${win ? 'нокаутом' : 'нокаут'} в ${round}-м раунде`
-        : result.method === 'shot'
-        ? win
-          ? 'застрелил соперника'
-          : 'застрелен'
-      : result.method === 'forfeit'
+        : result.method === 'forfeit'
           ? win
             ? 'соперник покинул ринг'
             : 'бой остановлен'

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Screen } from '../screen.js';
 import { h, clear } from '../../util/dom.js';
-import { GLOVES, SECRETS, gloveById, wallet, buy, equip, redeem, WIN_REWARD } from '../../game/shop.js';
+import { GLOVES, gloveById, wallet, buy, equip, redeem, WIN_REWARD } from '../../game/shop.js';
 import { gloveMaterialFor, makeGlove, COLORS } from '../../render/materials.js';
 
 const money = (n) => `$${n.toLocaleString('ru-RU')}`;
@@ -79,12 +79,7 @@ export class ShopScreen extends Screen {
     this.promoMsg = h('span.muted', '');
     const tryCode = () => {
       const g = redeem(this.promo.value);
-      if (g?.item) {
-        app.sfx.shot();
-        this.promoMsg.textContent = `Выдан: ${g.name}! ${g.desc}`;
-        this.promo.value = '';
-        this.#render();
-      } else if (g) {
+      if (g) {
         app.sfx.bell(1);
         this.promoMsg.textContent = `Открыто: ${g.name}!`;
         this.promo.value = '';
@@ -123,8 +118,6 @@ export class ShopScreen extends Screen {
   #render() {
     const w = wallet();
     this.moneyEl.textContent = money(w.money);
-    this.moneyEl.title = SECRETS.filter((s) => w[s.id]).map((s) => s.name).join(', ');
-    if (w.pistol) this.moneyEl.textContent += ' · 🔫';
     this.cards = GLOVES.map((g) => {
       const canvas = h('canvas', { width: 240, height: 240 });
       const status = w.equipped === g.id ? 'надето' : w.owned.includes(g.id) ? 'куплено' : g.code ? 'секретный код' : money(g.price);
@@ -135,7 +128,7 @@ export class ShopScreen extends Screen {
         h('b', g.name),
         h('span', status),
       );
-      return { g, canvas, el, drawn: false };
+      return { g, canvas, el };
     });
     clear(this.grid).append(...this.cards.map((c) => c.el));
     // Every card gets a first picture right away; after that they turn in turns.
