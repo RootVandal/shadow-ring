@@ -8,7 +8,8 @@ import { Coach, roundTalk, verdict } from '../src/game/coach.js';
 import { scoreOf, leaderboard } from '../src/game/records.js';
 import { mulberry32 } from '../src/util/math.js';
 import { CONFIG } from '../src/config.js';
-import { GLOVES, hashCode, TITLES, titleById } from '../src/game/shop.js';
+import { GLOVES, hashCode, TITLES, titleById, gloveById, buy } from '../src/game/shop.js';
+import { rankOf, winsToNext, nextState, TOP, RANKS } from '../src/game/ranked.js';
 import { voiceScore } from '../src/audio/voice.js';
 
 const OPEN = { guard: 'open', slip: false, duck: false };
@@ -409,4 +410,48 @@ test('voice: the nicest Russian voice wins over the robotic Windows ones', () =>
   assert.equal(best[1], 'Google русский');
   assert.equal(best[2], 'Milena');
   assert.ok(voiceScore({ name: 'Microsoft Irina - Russian (Russia)' }) < voiceScore({ name: 'Google русский' }));
+});
+
+test('ranked: Bronze 1 … Impossible 3, each step needs more wins, losses never demote', () => {
+  assert.equal(rankOf(0).label, 'Бронза 1');
+  assert.equal(rankOf(2).label, 'Бронза 3');
+  assert.equal(rankOf(3).label, 'Серебро 1');
+  assert.equal(rankOf(TOP).label, 'Невозможный 3');
+  assert.equal(TOP, 20);
+  assert.above(winsToNext(1), winsToNext(0));
+  assert.above(winsToNext(10), winsToNext(9));
+
+  let r = { step: 0, stars: 0, quick: 3, played: 0 };
+  for (let i = 0; i < winsToNext(0) - 1; i++) r = nextState(r, true).state;
+  assert.equal(r.step, 0);
+  const up = nextState(r, true);
+  assert.ok(up.promoted);
+  assert.equal(up.after, 1);
+  assert.equal(up.reward, null, 'Bronze 2 gives no gloves');
+
+  // a loss takes a win back but never drops below the step
+  const down = nextState({ step: 1, stars: 0, quick: 3, played: 5 }, false);
+  assert.equal(down.after, 1);
+  assert.equal(down.state.stars, 0);
+});
+
+test('ranked: entering a new rank gives its gloves; the top keeps counting', () => {
+  const silver = nextState({ step: 2, stars: winsToNext(2) - 1, quick: 3, played: 9 }, true);
+  assert.equal(rankOf(silver.after).label, 'Серебро 1');
+  assert.equal(silver.reward, 'r-silver');
+  const plat = nextState({ step: 8, stars: winsToNext(8) - 1, quick: 3, played: 9 }, true);
+  assert.equal(plat.reward, 'r-plat');
+  assert.equal(gloveById('r-plat').effect, 'rank');
+  const top = nextState({ step: TOP, stars: 50, quick: 3, played: 99 }, true);
+  assert.equal(top.after, TOP);
+  assert.equal(top.state.stars, 51);
+  assert.equal(nextState({ step: 5, stars: 1, quick: 3, played: 1 }, true).reward, null);
+});
+
+test('ranked: rank gloves cannot be bought', () => {
+  for (const r of RANKS.filter((x) => x.glove)) {
+    assert.ok(gloveById(r.glove).rank, r.glove);
+    const res = buy(r.glove);
+    assert.ok(!res.ok && (res.reason === 'rank' || res.reason === 'owned'), `${r.glove}: ${res.reason}`);
+  }
 });

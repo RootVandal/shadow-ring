@@ -14,5 +14,8 @@ if (!(probe.getContext('webgl2') || probe.getContext('webgl'))) {
     params: new URLSearchParams(location.search),
   });
   app.boot();
-  if (app.params.has('debug')) window.app = app;
+  if (app.params.has('debug')) {
+    window.app = app;
+    import('./game/ranked.js').then((m) => (window.ranked = m)); // проверка рейтинга из консоли
+  }
 }

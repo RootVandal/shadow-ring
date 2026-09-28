@@ -11,7 +11,7 @@ import { CONFIG } from '../config.js';
 // 3: hit zones (atk.zone), the dodge window
 export const PROTOCOL = 3;
 /** What the other side sees of us besides the skeleton (shop gloves). */
-export const profile = { glove: 'classic', title: null };
+export const profile = { glove: 'classic', title: null, rank: null };
 const ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 
 export class NetError extends Error {
@@ -38,7 +38,8 @@ async function peerLib() {
 export const randomCode = (n = 5) => Array.from({ length: n }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
 export const roomLink = (code) => `${location.origin}${location.pathname}#room=${code}`;
 const roomId = (code) => `${CONFIG.net.prefix}room-${code}`;
-const slotId = (i) => `${CONFIG.net.prefix}quick-${i}`;
+// pool 'quick' — обычный поиск, 'ranked' — рейтинговый: игроки ищут только внутри своего пула.
+const slotId = (i, pool = 'quick') => `${CONFIG.net.prefix}${pool}-${i}`;
 
 function openPeer(Peer, id = null) {
   return new Promise((resolve, reject) => {
@@ -190,7 +191,7 @@ function connect(peer, targetId) {
 
 /** Joiner side of the handshake: say hello, expect hello (or busy) back. */
 async function greet(wire, name) {
-  wire.send('hello', { v: PROTOCOL, name, glove: profile.glove, title: profile.title });
+  wire.send('hello', { v: PROTOCOL, name, glove: profile.glove, title: profile.title, rank: profile.rank });
   const reply = await Promise.race([waitFor(wire, 'hello', 6000), waitFor(wire, 'busy', 6000).then(() => Promise.reject(new NetError('busy')))]);
   if (reply.v !== PROTOCOL) throw new NetError('version');
   return reply;
@@ -213,7 +214,7 @@ function acceptOne(peer, name, isTaken = () => false) {
           return;
         }
         paired = true;
-        wire.send('hello', { v: PROTOCOL, name, glove: profile.glove, title: profile.title });
+        wire.send('hello', { v: PROTOCOL, name, glove: profile.glove, title: profile.title, rank: profile.rank });
         resolve({ wire, hello: m });
       });
     });
@@ -278,7 +279,7 @@ const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[
  * slots below ours, so two people who arrived at once still find each other.
  * Only higher slots knock on lower ones, so two waiters never cross-connect.
  */
-export async function quickMatch({ name, onStatus = () => {}, signal }) {
+export async function quickMatch({ name, onStatus = () => {}, signal, pool = 'quick' }) {
   const Peer = await peerLib();
   const me = await openPeer(Peer);
   const slots = [...Array(CONFIG.net.quickSlots).keys()];
@@ -292,14 +293,14 @@ export async function quickMatch({ name, onStatus = () => {}, signal }) {
     onStatus('search');
     for (const i of shuffle(slots)) {
       if (aborted()) throw new NetError('aborted');
-      const r = await tryJoin(me, slotId(i), name);
+      const r = await tryJoin(me, slotId(i, pool), name);
       if (r) return finish(r, 'guest');
     }
     for (const i of slots) {
       if (aborted()) throw new NetError('aborted');
       let host;
       try {
-        host = await openPeer(Peer, slotId(i));
+        host = await openPeer(Peer, slotId(i, pool));
       } catch (e) {
         if (e.code === 'taken') continue;
         throw e;
@@ -311,7 +312,7 @@ export async function quickMatch({ name, onStatus = () => {}, signal }) {
         while (!settled && !aborted()) {
           await new Promise((res) => setTimeout(res, CONFIG.net.rescanMs));
           for (let j = 0; j < i && !settled; j++) {
-            const r = await tryJoin(me, slotId(j), name);
+            const r = await tryJoin(me, slotId(j, pool), name);
             if (r) return r;
           }
         }

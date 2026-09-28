@@ -14,7 +14,13 @@ import { clamp } from '../util/math.js';
 const TRAIL = 3;
 
 /** Color of a punch in flight, by the thrower's shop gloves. */
-const GLOVE_COLOR = { violet: 0x6c2bd9, gold: 0xd9a92c, polka: 0xc92a24, legend: 0xf2c94c, onehit: 0xff3b1f };
+const GLOVE_COLOR = {
+  violet: 0x6c2bd9, gold: 0xd9a92c, polka: 0xc92a24, legend: 0xf2c94c, onehit: 0xff3b1f,
+  'r-silver': 0xd6dbe2, 'r-gold': 0xffc62e, 'r-plat': 0xd7e2e0, 'r-diamond': 0x8fdcff, 'r-legend': 0xff8a1a, 'r-impossible': 0x8a4dff,
+};
+
+/** Перчатки с особым эффектом удара: цвет ударной волны. «Легенда» — золото, ранговые — свой цвет. */
+const EFFECT_COLOR = { legend: 0xf2c94c, 'r-plat': 0xeafcff, 'r-diamond': 0x6fdcff, 'r-legend': 0xff7a1a, 'r-impossible': 0xb46bff };
 
 function ringTexture() {
   const c = document.createElement('canvas');
@@ -86,24 +92,25 @@ export class Fx {
         : kind === 'upper'
           ? mid.clone().add(new THREE.Vector3(0, -0.75, 0))
           : mid;
-    this.flying.push({ id, kind, from: from.clone(), ctrl, to: to.clone(), start, end, meshes, mats, fate: null, fateAt: 0, legend: glove === 'legend' });
+    this.flying.push({ id, kind, from: from.clone(), ctrl, to: to.clone(), start, end, meshes, mats, fate: null, fateAt: 0, effect: EFFECT_COLOR[glove] ?? null });
   }
 
-  /** «Легенда»: a clean hit bursts into a golden shockwave. */
-  legend(pos, now, scale = 1) {
+  /** «Легенда» (и ранговые с Платины): a clean hit bursts into a shockwave of the glove's color. */
+  legend(pos, now, scale = 1, color = EFFECT_COLOR.legend) {
     this.ringMap ??= ringTexture();
     for (const [delay, size] of [
       [0, 1.3],
       [90, 0.9],
     ]) {
-      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.ringMap, color: 0xf2c94c, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.ringMap, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
       s.position.copy(pos);
       s.visible = false;
       this.scene.add(s);
       this.bursts.push({ s, start: now + delay, dur: 420, scale: size * scale, ring: true });
     }
-    this.burst(pos, { scale: 0.8 * scale, now, tint: 0xffd873 });
-    this.sweat(pos, now, 22, this.goldMat);
+    const gold = color === EFFECT_COLOR.legend;
+    this.burst(pos, { scale: 0.8 * scale, now, tint: gold ? 0xffd873 : color });
+    this.sweat(pos, now, 22, gold ? this.goldMat : this.#sparkMat(color));
   }
 
   /** The impact was judged: hit / crit / blocked burst at the target, a miss flies past. */
@@ -113,8 +120,8 @@ export class Fx {
     p.fate = outcome;
     p.fateAt = now;
     const where = at ?? p.to;
-    if ((outcome === 'hit' || outcome === 'crit') && p.legend) {
-      this.legend(where, now, at ? 1 : 0.45);
+    if ((outcome === 'hit' || outcome === 'crit') && p.effect != null) {
+      this.legend(where, now, at ? 1 : 0.45, p.effect);
       this.shake = Math.max(this.shake, 0.5);
     } else if (outcome === 'hit' || outcome === 'crit') {
       this.burst(where, { scale: outcome === 'crit' ? 0.75 : 0.5, now });
@@ -122,6 +129,12 @@ export class Fx {
     } else if (outcome === 'blocked') {
       this.burst(where, { scale: 0.3, now, tint: 0x9fb6ff });
     }
+  }
+
+  #sparkMat(color) {
+    this.sparkMats ??= new Map();
+    if (!this.sparkMats.has(color)) this.sparkMats.set(color, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, depthWrite: false }));
+    return this.sparkMats.get(color);
   }
 
   /** Something hit the player: camera shake and a red edge flash. */

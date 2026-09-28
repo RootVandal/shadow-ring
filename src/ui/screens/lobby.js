@@ -3,7 +3,10 @@ import { Screen } from '../screen.js';
 import { tile } from './menu.js';
 import { h, clear, mmss } from '../../util/dom.js';
 import { hostRoom, joinRoom, quickMatch, profile } from '../../net/peer.js';
-import { wallet, titleById } from '../../game/shop.js';
+import { wallet, titleById, isOneHit } from '../../game/shop.js';
+import { ranked, unlocked, rankOf, winsToNext, TOP } from '../../game/ranked.js';
+import { rankBadge } from '../rank.js';
+import { CONFIG } from '../../config.js';
 import { RemoteLink } from '../../net/remote.js';
 
 const ERRORS = {
@@ -27,6 +30,7 @@ export class LobbyScreen extends Screen {
     this.abort = new AbortController();
     profile.glove = wallet().equipped;
     profile.title = wallet().title;
+    profile.rank = unlocked() ? ranked().step : null;
     this.body = h('div', { style: { display: 'grid', gap: '22px', alignContent: 'start' } });
     this.mount(
       h(
@@ -54,12 +58,52 @@ export class LobbyScreen extends Screen {
   }
 
   #choose() {
+    this.mode = null;
     this.#view(
       h(
-        'div.tiles.tiles--3',
+        'div.tiles',
         tile({ title: 'Случайный соперник', text: 'Первый, кто сейчас ищет бой, — где бы он ни был.', num: 'поиск', accent: '.tile--blue', onclick: () => this.#quick() }),
         tile({ title: 'Позвать друга', text: 'Комната со ссылкой и QR-кодом — можно драться с телефона.', num: 'комната', accent: '.tile--tape', onclick: () => this.#room() }),
         tile({ title: 'Ввести код', text: 'Друг уже создал комнату и прислал код.', num: 'код', onclick: () => this.#codeForm() }),
+        this.#rankedTile(),
+      ),
+    );
+  }
+
+  // ── рейтинг (game/ranked.js) ──────────────────────────────────────────
+
+  #rankedTile() {
+    const r = ranked();
+    const need = CONFIG.ranked.unlockAfter;
+    if (!unlocked(r)) {
+      const left = need - r.quick;
+      return tile({
+        title: 'Рейтинговый матч',
+        text: `Откроется после ${need} боёв со случайными соперниками · сыграно ${Math.min(r.quick, need)}/${need}`,
+        num: 'закрыто',
+        onclick: () => this.#notice('Рейтинг пока закрыт', `Сыграй ещё ${left} ${left === 1 ? 'бой' : 'боя'} со случайным соперником — и рейтинговые матчи откроются.`),
+      });
+    }
+    const { label } = rankOf(r.step);
+    const text = r.step >= TOP ? `${label} — вершина. Побед на ней: ${r.stars}` : `${label} · побед ${r.stars}/${winsToNext(r.step)} до следующей ступени`;
+    return tile({ title: 'Рейтинговый матч', text, num: 'рейтинг', accent: '.tile--tape', onclick: () => this.#ranked() });
+  }
+
+  #ranked() {
+    if (isOneHit(wallet().equipped)) {
+      this.#notice('«Ваншот» в рейтинге нельзя', 'Надень в магазине другие перчатки — рейтинг должен быть честным.');
+      return;
+    }
+    this.#quick('ranked');
+  }
+
+  #notice(title, text) {
+    this.#view(
+      h(
+        'div.error-card',
+        h('h2', title),
+        h('p', text),
+        h('button.btn.btn--small', { dataset: { dwell: '' }, onclick: () => this.#choose() }, 'Понятно'),
       ),
     );
   }
@@ -69,15 +113,17 @@ export class LobbyScreen extends Screen {
     this.#view(h('div.lobby__room', { style: { gridTemplateColumns: '1fr' } }, h('div.status-line', h('i.spinner'), this.statusText), extra));
   }
 
-  async #quick() {
+  async #quick(pool = 'quick') {
+    this.mode = pool;
     const started = performance.now();
+    const what = pool === 'ranked' ? 'рейтингового соперника' : 'соперника';
     const cancel = h('button.btn.btn--ghost.btn--small', { dataset: { dwell: '' }, onclick: () => this.#reset() }, 'Отмена');
-    this.#status('Ищем соперника…', h('div', { style: { display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' } }, cancel, h('span.muted', 'Никого? Позови друга ссылкой — так быстрее.')));
+    this.#status(`Ищем ${what}…`, pool === 'ranked' ? h('div', { style: { display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' } }, cancel, rankBadge(ranked().step, true)) : h('div', { style: { display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' } }, cancel, h('span.muted', 'Никого? Позови друга ссылкой — так быстрее.')));
     this.tick = () => {
-      if (this.statusText) this.statusText.textContent = `Ищем соперника… ${mmss((performance.now() - started) / 1000)}`;
+      if (this.statusText) this.statusText.textContent = `Ищем ${what}… ${mmss((performance.now() - started) / 1000)}`;
     };
     try {
-      const r = await quickMatch({ name: this.app.settings.name, signal: this.abort.signal });
+      const r = await quickMatch({ name: this.app.settings.name, signal: this.abort.signal, pool });
       this.#connected(r);
     } catch (e) {
       this.#fail(e);
@@ -175,7 +221,7 @@ export class LobbyScreen extends Screen {
       ),
     );
     app.voice.say(`Соперник найден: ${foeName}`);
-    this.later(1800, () => app.go('fight', { mode: 'online', link, role, foeName, foeGlove: String(hello.glove || 'classic'), foeTitle: titleById(hello.title)?.id ?? null }));
+    this.later(1800, () => app.go('fight', { mode: 'online', link, role, foeName, foeGlove: String(hello.glove || 'classic'), foeTitle: titleById(hello.title)?.id ?? null, foeRank: Number.isInteger(hello.rank) && hello.rank >= 0 && hello.rank <= TOP ? hello.rank : null, quick: this.mode === 'quick', ranked: this.mode === 'ranked' }));
   }
 
   #fail(e) {

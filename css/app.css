@@ -1726,7 +1726,8 @@ p {
 
 .glove-detail__info h2 {
   margin: 8px 0 14px;
-  font-size: clamp(40px, 5.5vw, 76px);
+  font-size: clamp(34px, 4.6vw, 76px);
+  overflow-wrap: anywhere;
   text-transform: uppercase;
 }
 
@@ -1873,6 +1874,100 @@ p {
   to {
     background-position: -150% 0;
   }
+}
+
+/* ─── Ranked: rank badges (ui/rank.js) ────────────────────────────────── */
+
+.rank-badge {
+  --r1: #e0a070;
+  --r2: #8a4b22;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 25px;
+  clip-path: polygon(50% 0, 100% 20%, 100% 68%, 50% 100%, 0 68%, 0 20%);
+  background: linear-gradient(160deg, var(--r1), var(--r2));
+  color: #140f0a;
+  font: 700 12px/1 var(--mono);
+  letter-spacing: 0;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.rank--silver {
+  --r1: #f7f9fb;
+  --r2: #8f99a4;
+}
+
+.rank--gold {
+  --r1: #ffe680;
+  --r2: #c28a12;
+}
+
+.rank--platinum {
+  --r1: #eafffb;
+  --r2: #5fa8a0;
+}
+
+.rank--diamond {
+  --r1: #d9f7ff;
+  --r2: #2f93d6;
+}
+
+.rank--legend {
+  --r1: #ffd35a;
+  --r2: #d9361a;
+}
+
+.rank--impossible {
+  --r1: #f0c8ff;
+  --r2: #4b16a3;
+  color: #fff;
+  text-shadow: 0 0 6px #d9a6ff;
+  animation: rank-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes rank-glow {
+  50% {
+    filter: brightness(1.35) drop-shadow(0 0 4px #c77dff);
+  }
+}
+
+.rank-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.rank-label {
+  font: 700 13px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+
+.plate__who {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.plate--blue .plate__who {
+  flex-direction: row-reverse;
+}
+
+.rank-result {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.rank-result__line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
 }
 
 /* ─── Small screens & phones ──────────────────────────────────────────── */

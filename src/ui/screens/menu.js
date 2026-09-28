@@ -5,6 +5,8 @@ import { h } from '../../util/dom.js';
 import { UI } from '../../strings.js';
 import { wallet } from '../../game/shop.js';
 import { titleTag } from '../title.js';
+import { rankBadge } from '../rank.js';
+import { ranked, unlocked } from '../../game/ranked.js';
 
 export function tile({ key = null, title, text, num, accent = '', onclick }) {
   const [t, d] = key ? UI.modes[key] : [title, text];
@@ -32,7 +34,12 @@ export class MenuScreen extends Screen {
           h(
             'div',
             titleTag(wallet().title),
-            h('p.muted.mono', { style: { fontSize: '13px', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '10px' } }, `боец: ${app.settings.name}`),
+            h(
+              'p.muted.mono',
+              { style: { fontSize: '13px', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+              `боец: ${app.settings.name}`,
+              unlocked() ? rankBadge(ranked().step, true) : null,
+            ),
             h('h1.menu__title', UI.menuTitle),
           ),
           h('div.menu-pip', this.pip.el),

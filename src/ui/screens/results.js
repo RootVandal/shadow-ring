@@ -5,7 +5,9 @@ import { verdict } from '../../game/coach.js';
 import { recordFight, scoreOf } from '../../game/records.js';
 import { PoseAnimator } from '../../render/animator.js';
 import { KIND } from '../../strings.js';
-import { earn, WIN_REWARD } from '../../game/shop.js';
+import { earn, WIN_REWARD, gloveById, grant } from '../../game/shop.js';
+import { countQuick, applyResult, rankOf, winsToNext, TOP } from '../../game/ranked.js';
+import { rankBadge } from '../rank.js';
 
 const pct = (x) => (x == null ? '—' : `${Math.round(x * 100)}%`);
 
@@ -16,6 +18,7 @@ export class ResultsScreen extends Screen {
   enter() {
     const { app, params } = this;
     const { report, result, mode, level, foeName, round, secondsLeft, koSeconds, myHp, foeHp, link, oneHit } = params;
+    const isRanked = params.ranked && !oneHit;
     app.stage.setMode('showcase');
     app.cursor.setEnabled(true);
     app.tracker.warnGuard = false;
@@ -47,6 +50,10 @@ export class ResultsScreen extends Screen {
       koSeconds: win && result.method === 'ko' ? Math.round(koSeconds) : null,
     });
     const v = verdict(report);
+    // Бои со случайными соперниками открывают рейтинг; рейтинговый бой двигает ранг.
+    if (params.quick) countQuick();
+    const rk = isRanked && result.winner !== 'draw' ? applyResult(result.winner === 'me') : null; // ничья ранг не трогает
+    if (rk?.reward) grant(rk.reward);
 
     const title = result.winner === 'draw' ? 'Ничья' : win ? 'Победа' : 'Поражение';
     const how =
@@ -79,6 +86,7 @@ export class ResultsScreen extends Screen {
             h(`h1.verdict${win ? '.is-win' : result.winner === 'foe' ? '.is-loss' : ''}`, title),
             h('p.verdict__how', how),
             purse && h('p.reward', `+$${reward} · на счету $${purse.money.toLocaleString('ru-RU')}`),
+            rk && this.#rankBlock(rk),
             h(
               'div.score',
               h('div.grade', v.grade),
@@ -172,7 +180,24 @@ export class ResultsScreen extends Screen {
     if (!this.meAgain || !this.peerAgain) return;
     const { params } = this;
     this.keepLink = true;
-    this.app.go('fight', { mode: 'online', link: this.link, role: params.role, foeName: params.foeName, foeGlove: params.foeGlove, foeTitle: params.foeTitle });
+    this.app.go('fight', { mode: 'online', link: this.link, role: params.role, foeName: params.foeName, foeGlove: params.foeGlove, foeTitle: params.foeTitle, foeRank: params.foeRank, quick: params.quick, ranked: params.ranked });
+  }
+
+  /** Что стало с рангом после рейтингового боя. */
+  #rankBlock(rk) {
+    const now = rankOf(rk.after);
+    const line = rk.promoted
+      ? `Повышение: ${rankOf(rk.before).label} → ${now.label}!`
+      : rk.after >= TOP
+        ? `${now.label} — вершина рейтинга`
+        : `${now.label} · побед ${rk.state.stars}/${winsToNext(rk.after)} до следующей ступени`;
+    if (rk.promoted) this.app.sfx.cheer(1);
+    return h(
+      'div.rank-result',
+      h('p.muted.mono', { style: { fontSize: '12px', letterSpacing: '.12em', textTransform: 'uppercase' } }, 'рейтинг'),
+      h('div.rank-result__line', rankBadge(rk.after), h('b', line)),
+      rk.reward ? h('p.reward', `Новые перчатки: ${gloveById(rk.reward).name} — надень в магазине`) : null,
+    );
   }
 
   #leave(to) {

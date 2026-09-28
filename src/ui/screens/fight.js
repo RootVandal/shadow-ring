@@ -12,6 +12,7 @@ import { PoseAnimator } from '../../render/animator.js';
 import { KIND, DEFENSE_WORD, TIPS } from '../../strings.js';
 import { CONFIG } from '../../config.js';
 import { wallet, isOneHit } from '../../game/shop.js';
+import { ranked, unlocked } from '../../game/ranked.js';
 
 const other = (side) => (side === 'left' ? 'right' : 'left');
 
@@ -39,6 +40,9 @@ export class FightScreen extends Screen {
     // Титулы над никами на плашках (у Тени титула нет).
     this.me.title = wallet().title;
     this.foe.title = this.online ? params.foeTitle ?? null : null;
+    // Значок ранга рядом с ником — у тех, кому открыт рейтинг.
+    this.me.rank = unlocked() ? ranked().step : null;
+    this.foe.rank = this.online ? params.foeRank ?? null : null;
     this.myGlove = wallet().equipped;
     this.foeGlove = this.online ? params.foeGlove ?? 'classic' : 'classic';
     app.stage.gloves.setGlove(this.myGlove);
@@ -387,6 +391,9 @@ export class FightScreen extends Screen {
       foeName: this.foe.name,
       foeGlove: this.params.foeGlove,
       foeTitle: this.params.foeTitle,
+      foeRank: this.params.foeRank,
+      quick: this.params.quick,
+      ranked: this.params.ranked,
       round: match.round,
       secondsLeft,
       koSeconds,

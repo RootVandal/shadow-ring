@@ -49,9 +49,26 @@ export const GLOVES = [
     effect: 'onehit',
     desc: 'Перчатки разработчика. Любой удар, который дошёл до цели, — нокаут. От уклона и нырка всё равно можно уйти. Бои в них не идут в рекорды и не приносят денег.',
   },
+  // Перчатки за рейтинг (game/ranked.js): не продаются, выдаются при входе в ранг.
+  // С Платины — узорная текстура и свой эффект удара (effect: 'rank').
+  { id: 'r-silver', name: 'Серебряный ранг', rank: 'Серебро', desc: 'Полированное серебро. Выдаются за выход в Серебро в рейтинговых матчах.' },
+  { id: 'r-gold', name: 'Золотой ранг', rank: 'Золото', desc: 'Яркое рейтинговое золото — не путать с купленным. Только за ранг Золото.' },
+  { id: 'r-plat', name: 'Платиновый ранг', rank: 'Платина', effect: 'rank', desc: 'Платина в мелкие соты. Точный удар отдаётся белой ударной волной.' },
+  { id: 'r-diamond', name: 'Алмазный ранг', rank: 'Алмаз', effect: 'rank', desc: 'Гранёные, переливаются на свету, как камень. Удар — голубая вспышка.' },
+  { id: 'r-legend', name: 'Ранг Легенда', rank: 'Легенда', effect: 'rank', desc: 'Чёрные с живым пламенем. Каждый точный удар — огненная волна.' },
+  { id: 'r-impossible', name: 'Невозможные', rank: 'Невозможный', effect: 'rank', desc: 'Кусок ночного неба: звёзды и туманности. Удар — фиолетовый взрыв. Их почти ни у кого нет.' },
 ];
 
 export const gloveById = (id) => GLOVES.find((g) => g.id === id) ?? GLOVES[0];
+
+/** Выдать перчатки (за ранг). Надевать не заставляем. */
+export function grant(id) {
+  const w = read();
+  if (w.owned.includes(id)) return false;
+  w.owned.push(id);
+  save('wallet', w);
+  return true;
+}
 
 // ТИТУЛЫ: надпись над ником (в меню и на плашке с HP в бою), её видит соперник.
 // Вид каждого титула — классы .title--<id> в css/app.css.
@@ -106,6 +123,7 @@ export function buy(id) {
   const g = gloveById(id);
   if (w.owned.includes(id)) return { ok: false, reason: 'owned' };
   if (g.code) return { ok: false, reason: 'code' };
+  if (g.rank) return { ok: false, reason: 'rank' };
   if (w.money < g.price) return { ok: false, reason: 'money' };
   w.money -= g.price;
   w.owned.push(id);

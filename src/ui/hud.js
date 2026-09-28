@@ -1,6 +1,7 @@
 import { h, mmss } from '../util/dom.js';
 import { KIND } from '../strings.js';
 import { titleTag } from './title.js';
+import { rankBadge } from './rank.js';
 
 // Fight overlay in TV-broadcast style: nameplates with HP and stamina, round
 // clock, the coach's note, the incoming-punch telegraph and hit popups.
@@ -18,7 +19,7 @@ export class Hud {
       const el = h(
         `div.plate${cls}`,
         f.title ? h('div.plate__title', titleTag(f.title)) : null,
-        h('div.plate__row', h('span.plate__name', f.name), num),
+        h('div.plate__row', f.rank != null ? h('span.plate__who', rankBadge(f.rank), h('span.plate__name', f.name)) : h('span.plate__name', f.name), num),
         h('div.bar', lag, hp),
         h('div.bar.bar--sta', sta),
       );

@@ -185,7 +185,7 @@ export class ShopScreen extends Screen {
     // Скрытые перчатки видны только тому, кто уже ввёл их код.
     this.cards = GLOVES.filter((g) => !g.hidden || w.owned.includes(g.id)).map((g) => {
       const canvas = h('canvas', { width: 240, height: 240 });
-      const status = w.equipped === g.id ? 'надето' : w.owned.includes(g.id) ? 'куплено' : g.code ? 'секретный код' : money(g.price);
+      const status = w.equipped === g.id ? 'надето' : w.owned.includes(g.id) ? (g.rank ? 'получено' : 'куплено') : g.code ? 'секретный код' : g.rank ? `за ранг ${g.rank}` : money(g.price);
       const el = h(
         `button.glove-card${w.equipped === g.id ? '.is-on' : ''}`,
         { dataset: { dwell: '' }, onclick: () => this.#open(g.id) },
@@ -223,7 +223,7 @@ export class ShopScreen extends Screen {
       else {
         const r = buy(id);
         if (!r.ok) {
-          msg.textContent = r.reason === 'money' ? `Не хватает ${money(g.price - wallet().money)}. Побеждай онлайн!` : 'Эти перчатки открываются только кодом.';
+          msg.textContent = r.reason === 'money' ? `Не хватает ${money(g.price - wallet().money)}. Побеждай онлайн!` : r.reason === 'rank' ? `Выдаются за ранг ${g.rank} в рейтинговых матчах.` : 'Эти перчатки открываются только кодом.';
           return;
         }
         app.sfx.cheer(0.6);
@@ -232,7 +232,7 @@ export class ShopScreen extends Screen {
       this.#render();
       this.#open(id);
     };
-    const label = canTakeOff ? 'Снять' : worn ? 'Надето' : owned ? 'Надеть' : g.code ? 'Только по коду' : `Купить за ${money(g.price)}`;
+    const label = canTakeOff ? 'Снять' : worn ? 'Надето' : owned ? 'Надеть' : g.code ? 'Только по коду' : g.rank ? `За ранг ${g.rank}` : `Купить за ${money(g.price)}`;
     const msg = h('p.muted');
     this.detail.replaceChildren(
       h(
@@ -240,13 +240,13 @@ export class ShopScreen extends Screen {
         this.bigCanvas,
         h(
           'div.glove-detail__info',
-          h('p.muted.mono', { style: { fontSize: '12px', letterSpacing: '.14em', textTransform: 'uppercase' } }, g.code || g.hidden ? 'секретные' : g.price ? money(g.price) : 'бесплатно'),
+          h('p.muted.mono', { style: { fontSize: '12px', letterSpacing: '.14em', textTransform: 'uppercase' } }, g.code || g.hidden ? 'секретные' : g.rank ? `рейтинг · ранг ${g.rank}` : g.price ? money(g.price) : 'бесплатно'),
           h('h2', g.name),
           h('p', g.desc),
           g.effect ? h('p.badge', { style: { display: 'inline-block', marginTop: '12px' } }, 'особый эффект удара') : null,
           h(
             'div.actions',
-            h(`button.tile${worn && !canTakeOff ? '' : '.tile--tape'}`, { dataset: { dwell: '' }, onclick: act, disabled: (worn && !canTakeOff) || (!owned && !!g.code) }, h('span.tile__num', `на счету ${money(w.money)}`), h('div.tile__title', label)),
+            h(`button.tile${worn && !canTakeOff ? '' : '.tile--tape'}`, { dataset: { dwell: '' }, onclick: act, disabled: (worn && !canTakeOff) || (!owned && (!!g.code || !!g.rank)) }, h('span.tile__num', `на счету ${money(w.money)}`), h('div.tile__title', label)),
             h('button.tile', { dataset: { dwell: '' }, onclick: () => this.#close() }, h('span.tile__num', 'назад'), h('div.tile__title', 'Закрыть')),
           ),
           msg,
