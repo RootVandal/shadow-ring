@@ -1550,6 +1550,11 @@ p {
   right: var(--gutter);
   bottom: var(--gutter);
   width: min(360px, 92vw);
+  /* Taller than a small screen: scroll inside instead of losing the top rows. */
+  max-height: calc(100vh - 2 * var(--gutter));
+  max-height: calc(100dvh - 2 * var(--gutter));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 18px 20px;
   background: var(--ink-2);
   border: 2px solid var(--line);

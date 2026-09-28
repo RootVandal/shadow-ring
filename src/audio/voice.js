@@ -20,12 +20,13 @@ export class Voice {
     this.voice = null;
     this.preferred = ''; // имя голоса из настроек; '' — выбрать лучший самим
     this.voices = [];
+    this.broken = new Set(); // голоса, которые у этого браузера не заговорили — пропускаем
     this.synth = globalThis.speechSynthesis ?? null;
     if (!this.synth) return;
     const pick = () => {
       this.voices = this.synth
         .getVoices()
-        .filter((v) => /^ru/i.test(v.lang))
+        .filter((v) => /^ru/i.test(v.lang) && !this.broken.has(v.name))
         .sort((a, b) => voiceScore(b) - voiceScore(a));
       this.voice = this.voices.find((v) => v.name === this.preferred) ?? this.voices[0] ?? null;
     };
@@ -55,6 +56,15 @@ export class Voice {
     const robotic = voiceScore(this.voice) === 0;
     u.rate = robotic ? 1 : 1.12;
     u.pitch = robotic ? 1 : 0.95;
+    // Сетевой голос (Google, Natural) может не сработать без интернета — тогда
+    // переходим на следующий голос и повторяем фразу, а не молчим.
+    const voice = this.voice;
+    u.onerror = (e) => {
+      if (e.error === 'interrupted' || e.error === 'canceled' || this.voice !== voice) return;
+      this.broken.add(voice.name);
+      this.pick();
+      if (this.voice) this.say(text, { interrupt: true });
+    };
     this.synth.speak(u);
   }
 
