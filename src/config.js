@@ -119,6 +119,14 @@ export const CONFIG = {
     knockMs: 10000, // the timekeeper knocks 10 s before the bell
   },
 
+  // Online fights on top of `fight`: a KO only ends the round, a short pause,
+  // then both start the next round at full HP. Most rounds won takes the fight.
+  onlineFight: {
+    breakSeconds: 3,
+    roundKo: true,
+    resetHp: true,
+  },
+
   bot: {
     easy: { interval: [2.6, 4.0], window: 850, combo: 0, defend: 0.25, smart: 0.5, guardUp: 0.45, damage: 0.55, reads: 0.2 },
     normal: { interval: [2.0, 3.2], window: 700, combo: 0.25, defend: 0.42, smart: 0.7, guardUp: 0.6, damage: 0.7, reads: 0.5 },

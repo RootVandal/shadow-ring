@@ -49,6 +49,7 @@ export class FightScreen extends Screen {
       link: this.link,
       authority: !this.online || params.role === 'host',
       defense: (now) => app.tracker.defenseAt(now),
+      rules: this.online ? { ...CONFIG.fight, ...CONFIG.onlineFight } : CONFIG.fight,
     });
     this.match = m;
     this.stats = new MatchStats();
@@ -57,6 +58,7 @@ export class FightScreen extends Screen {
     this.hud.pipSlot.append(this.pip.el);
     const quit = h('button.btn.btn--ghost.btn--small', { style: { position: 'absolute', right: 'var(--gutter)', top: '118px' }, onclick: () => m.forfeit(performance.now()) }, 'Сдаться');
     this.hud.el.append(quit);
+    if (this.online) this.#foeCam();
     this.mount(this.hud.el);
 
     const t = app.tracker;
@@ -109,10 +111,29 @@ export class FightScreen extends Screen {
     }
   }
 
+  /** The opponent's webcam, top left under my plate — if they share it. */
+  #foeCam() {
+    const video = h('video', { autoplay: true, playsinline: true, muted: true });
+    const box = h('div.foe-cam.is-empty', video, h('span.pip__label', this.foe.name), h('span.foe-cam__empty', 'камера соперника выключена'));
+    const show = (stream) => {
+      if (video.srcObject !== stream) video.srcObject = stream;
+      box.classList.toggle('is-empty', !stream);
+      if (stream) video.play().catch(() => {});
+    };
+    show(this.link.video?.stream ?? null);
+    if (this.link.video) this.listen(this.link.video, 'video', show);
+    this.hud.el.append(box);
+  }
+
   // ── rounds ────────────────────────────────────────────────────────────
 
-  #phase({ phase, round, endsAt }) {
+  #phase({ phase, round, endsAt, wins, last }) {
     const { app, hud } = this;
+    if (phase === 'round') this.koAnim = null;
+    if (phase === 'break' && this.match.rules.roundKo) {
+      this.#roundBreak(round, wins, last);
+      return;
+    }
     if (phase === 'intro') {
       app.sfx.cheer(0.5);
       hud.callout(this.me.name, 'красный угол', 1300);
@@ -135,6 +156,26 @@ export class FightScreen extends Screen {
       hud.showCorner(talk, endsAt);
       app.sfx.bell(2);
       app.voice.say(talk.headline, { interrupt: true });
+    }
+  }
+
+  /** Online: no corner talk, just who took the round, the score and a short pause. */
+  #roundBreak(round, wins, last) {
+    const { app, hud } = this;
+    this.stats.endRound();
+    hud.clearTelegraphs();
+    app.stage.fx.clear();
+    app.coach.clear();
+    app.sfx.bell(2);
+    const title = last?.winner === 'me' ? 'Раунд твой' : last?.winner === 'foe' ? 'Раунд за соперником' : 'Ничья в раунде';
+    const how = last?.method === 'ko' ? 'нокаут' : 'по очкам';
+    hud.callout(title, `${how} · счёт ${wins.me} : ${wins.foe}`, this.match.rules.breakSeconds * 1000);
+    app.voice.say(`${title}. Счёт ${wins.me} ${wins.foe}`, { interrupt: true });
+    if (last?.method === 'ko' && last.winner === 'me') {
+      this.koAnim = new PoseAnimator();
+      this.koAnim.knockout();
+      app.stage.arena.cheer(1);
+      app.sfx.cheer(0.8);
     }
   }
 
@@ -302,13 +343,17 @@ export class FightScreen extends Screen {
     } else if (result.method === 'forfeit') {
       title = win ? 'Победа' : 'Бой остановлен';
       small = win ? 'соперник покинул ринг' : null;
+    } else if (result.method === 'rounds') {
+      title = result.winner === 'draw' ? 'Ничья' : win ? 'Победа' : 'Поражение';
+      small = `по раундам ${result.wins.me} : ${result.wins.foe}`;
     } else {
       title = result.winner === 'draw' ? 'Ничья' : win ? 'Победа' : 'Поражение';
       small = 'решение по очкам';
     }
     hud.callout(title, small, 0);
     app.voice.say(title.replace('!', ''), { interrupt: true });
-    if (this.online && win && result.method === 'ko') {
+    // Online the fight can end on a KO in the last round even though it's decided by rounds.
+    if (this.online && win && (result.method === 'ko' || this.foe.hp <= 0)) {
       this.koAnim = new PoseAnimator();
       this.koAnim.knockout();
     }

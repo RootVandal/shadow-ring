@@ -7,7 +7,7 @@ import { CONFIG } from '../config.js';
 // ships TURN relays for networks where a direct path is impossible). No game
 // server of our own — the site stays a static folder.
 
-export const PROTOCOL = 1;
+export const PROTOCOL = 2; // 2: online fights are three rounds, a KO ends only the round
 const ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 
 export class NetError extends Error {
@@ -74,6 +74,8 @@ export class Wire extends Emitter {
     this.rtt = null;
     this.lastSeen = performance.now();
     this.ended = false;
+    this.early = []; // video signaling that came before anyone listened (see net/video.js)
+    this.earlyOpen = true;
     conn.on('open', () => {
       this.open = true;
       this.lastSeen = performance.now();
@@ -86,7 +88,8 @@ export class Wire extends Emitter {
       else if (m.t === 'pong') {
         const rtt = performance.now() - m.at;
         this.rtt = this.rtt == null ? rtt : this.rtt * 0.7 + rtt * 0.3;
-      } else this.emit(m.t, m);
+      } else if (this.earlyOpen && (m.t === 'sdp' || m.t === 'ice')) this.early.push(m);
+      else this.emit(m.t, m);
     });
     conn.on('close', () => this.#end());
     conn.on('error', () => this.#end());
@@ -95,6 +98,12 @@ export class Wire extends Emitter {
       this.send('ping', { at: performance.now() });
       if (performance.now() - this.lastSeen > 9000) this.#end(); // the other side vanished silently
     }, CONFIG.net.pingMs);
+  }
+
+  /** Hands over the buffered video signaling; from now on it's emitted as usual. */
+  takeEarly() {
+    this.earlyOpen = false;
+    return this.early.splice(0);
   }
 
   send(t, payload = {}) {

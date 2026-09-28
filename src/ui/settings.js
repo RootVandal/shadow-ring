@@ -30,6 +30,11 @@ export function openSettings(app) {
       'Трекинг',
       select(s.model, [['lite', 'Быстрый (lite)'], ['full', 'Точный (full) — после перезагрузки']], (v) => set({ model: v })),
     ),
+    h(
+      'label.field',
+      'Показывать мою камеру сопернику (онлайн)',
+      h('input', { type: 'checkbox', checked: s.shareCam, onchange: (e) => set({ shareCam: e.target.checked }) }),
+    ),
     h('label.field', 'Звук', h('input', { type: 'checkbox', checked: s.sound, onchange: (e) => set({ sound: e.target.checked }) })),
     h(
       'label.field',

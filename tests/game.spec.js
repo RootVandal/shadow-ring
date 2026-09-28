@@ -75,11 +75,11 @@ class FakeLink {
   }
 }
 
-function fight({ defense = () => OPEN, authority = true } = {}) {
+function fight({ defense = () => OPEN, authority = true, rules = CONFIG.fight } = {}) {
   const me = new Fighter({ name: 'Я', corner: 'red' });
   const foe = new Fighter({ name: 'Он', corner: 'blue' });
   const link = new FakeLink();
-  const m = new Match({ me, foe, link, authority, defense });
+  const m = new Match({ me, foe, link, authority, defense, rules });
   const log = [];
   for (const e of ['phase', 'defended', 'landed', 'over']) m.on(e, (x) => log.push([e, x]));
   let now = 0;
@@ -180,6 +180,61 @@ test('match: pausing freezes the clock and pending punches', () => {
   assert.equal(f.me.hp, 100, 'the punch waits');
   f.run(600);
   assert.below(f.me.hp, 100);
+});
+
+const ONLINE = { ...CONFIG.fight, ...CONFIG.onlineFight };
+
+test('online: a KO ends only the round; after a short break both are back at full HP', () => {
+  const f = fight({ rules: ONLINE });
+  f.m.start(0);
+  f.run(ONLINE.introSeconds * 1000 + 50);
+  f.me.hp = 5;
+  f.m.incoming({ id: 1, kind: 'cross', power: 20 }, 100, f.now);
+  f.run(200);
+  assert.equal(f.m.phase, 'break', 'not over — just the round');
+  assert.equal(f.m.wins.foe, 1);
+  assert.equal(f.m.lastRound.method, 'ko');
+  const ph = f.link.sent.filter(([k]) => k === 'phase').at(-1)[1];
+  assert.equal(ph.wins.foe, 1, 'the guest learns the score');
+  f.run(ONLINE.breakSeconds * 1000 + 100);
+  assert.equal(f.m.phase, 'round');
+  assert.equal(f.m.round, 2);
+  assert.equal(f.me.hp, 100);
+  assert.equal(f.foe.hp, 100);
+});
+
+test('online: three rounds, the fight is decided by rounds won', () => {
+  const f = fight({ rules: ONLINE });
+  f.m.start(0);
+  f.run(ONLINE.introSeconds * 1000 + 50);
+  f.foe.hp = 0; // round 1: my KO (as reported by the other side)
+  f.m.pending.set(1, { attack: { id: 1, kind: 'jab' } });
+  f.m.landed({ id: 1, outcome: 'hit', damage: 5, hp: 0 }, f.now);
+  assert.equal(f.m.wins.me, 1);
+  f.run(ONLINE.breakSeconds * 1000 + 100);
+  f.foe.hp = 60; // round 2 on points
+  f.run(ONLINE.roundSeconds * 1000 + 100);
+  assert.equal(f.m.wins.me, 2);
+  f.run(ONLINE.breakSeconds * 1000 + ONLINE.roundSeconds * 1000 + 200);
+  assert.equal(f.m.phase, 'over');
+  assert.equal(f.m.result.method, 'rounds');
+  assert.equal(f.m.result.winner, 'me');
+});
+
+test('online: the follower is KO-ed but waits for the host to score the round', () => {
+  const f = fight({ rules: ONLINE, authority: false });
+  f.m.applyPhase({ phase: 'round', round: 1, ms: 30000 }, f.now);
+  f.me.hp = 5;
+  f.m.incoming({ id: 1, kind: 'cross', power: 20 }, 100, f.now);
+  f.run(200);
+  assert.equal(f.m.phase, 'round');
+  assert.ok(f.m.roundOver);
+  assert.equal(f.m.throwPunch({ kind: 'jab', side: 'left', quality: 1 }, f.now), null, 'no punching while down');
+  f.m.applyPhase({ phase: 'break', round: 1, ms: 3000, wins: { me: 0, foe: 1 }, last: { winner: 'foe', method: 'ko' } }, f.now);
+  assert.equal(f.m.wins.foe, 1);
+  f.m.applyPhase({ phase: 'round', round: 2, ms: 45000 }, f.now);
+  assert.equal(f.me.hp, 100);
+  assert.ok(!f.m.roundOver);
 });
 
 test('bot: a full fight against the Shadow finishes with a verdict', () => {

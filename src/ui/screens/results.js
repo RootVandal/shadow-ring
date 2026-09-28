@@ -50,7 +50,9 @@ export class ResultsScreen extends Screen {
           ? win
             ? 'соперник покинул ринг'
             : 'бой остановлен'
-          : `по очкам · ${Math.ceil(myHp)} : ${Math.ceil(Math.max(0, foeHp))} HP`;
+          : result.method === 'rounds'
+            ? `по раундам · ${result.wins.me} : ${result.wins.foe}`
+            : `по очкам · ${Math.ceil(myHp)} : ${Math.ceil(Math.max(0, foeHp))} HP`;
     const badges = {
       score: 'новый рекорд очков',
       technique: 'лучшая техника',
