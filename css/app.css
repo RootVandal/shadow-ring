@@ -2077,6 +2077,54 @@ p {
   }
 }
 
+/* ─── Fight: each nameplate above its own camera ──────────────────────── */
+/* In a fight my camera is on the right and the opponent's on the left, so the
+   plates swap sides: the opponent (blue) left, me (red) right. The slant and
+   the HP bar follow the side, not the color. The tutorial keeps the old order. */
+.hud--fight .hud__top > .plate--blue {
+  order: 1;
+}
+
+.hud--fight .hud__top > :not(.plate) {
+  order: 2;
+}
+
+.hud--fight .hud__top > .plate:not(.plate--blue) {
+  order: 3;
+}
+
+.hud--fight .plate--blue {
+  clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%);
+  text-align: left;
+}
+
+.hud--fight .plate--blue .plate__row,
+.hud--fight .plate--blue .plate__who {
+  flex-direction: row;
+}
+
+.hud--fight .plate--blue .bar i,
+.hud--fight .plate--blue .bar b {
+  left: 0;
+  right: auto;
+}
+
+.hud--fight .plate:not(.plate--blue) {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%);
+  text-align: right;
+}
+
+.hud--fight .plate:not(.plate--blue) .plate__row,
+.hud--fight .plate:not(.plate--blue) .plate__who {
+  flex-direction: row-reverse;
+}
+
+.hud--fight .plate:not(.plate--blue) .bar i,
+.hud--fight .plate:not(.plate--blue) .bar b {
+  left: auto;
+  right: 0;
+}
+
 /* ─── Phone fight: only the webcams, the clock and HP ─────────────────── */
 /* In a fight (.hud--fight, not the tutorial) a phone shows the opponent, one
    thin top bar and two small cameras in the bottom corners — nothing else. */
