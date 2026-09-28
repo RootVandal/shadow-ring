@@ -44,6 +44,50 @@ export function gloveMaterial(corner) {
   });
 }
 
+let polkaMap = null;
+
+function polkaTexture() {
+  if (polkaMap) return polkaMap;
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#c92a24';
+  g.fillRect(0, 0, 256, 256);
+  g.fillStyle = '#f4efe4';
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      g.beginPath();
+      g.arc(x * 32 + (y % 2 ? 16 : 0), y * 32 + 16, 7, 0, Math.PI * 2);
+      g.fill();
+    }
+  }
+  polkaMap = new THREE.CanvasTexture(c);
+  polkaMap.colorSpace = THREE.SRGBColorSpace;
+  polkaMap.wrapS = polkaMap.wrapT = THREE.RepeatWrapping;
+  polkaMap.repeat.set(2, 1);
+  return polkaMap;
+}
+
+/** Shop gloves (game/shop.js); 'classic' takes the corner's color. */
+export function gloveMaterialFor(id, corner) {
+  const phys = (o) => new THREE.MeshPhysicalMaterial({ roughness: 0.34, clearcoat: 0.7, clearcoatRoughness: 0.3, ...o });
+  switch (id) {
+    case 'violet':
+      return phys({ color: 0x6c2bd9, clearcoat: 1, clearcoatRoughness: 0.15 });
+    case 'gold':
+      return phys({ color: 0xe0b23a, metalness: 0.55, roughness: 0.25, clearcoat: 1 });
+    case 'polka':
+      return phys({ map: polkaTexture() });
+    case 'legend': {
+      const m = rimMaterial({ color: 0x111014, rim: 0xf2c94c, strength: 1.6, power: 2.2, roughness: 0.3 });
+      m.emissive = new THREE.Color(0x2a1d00);
+      return m;
+    }
+    default:
+      return gloveMaterial(corner);
+  }
+}
+
 let gloveGeo = null;
 
 /** A boxing glove: padded fist, cuff, thumb. Its +z is where the knuckles point. */

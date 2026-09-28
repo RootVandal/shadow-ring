@@ -13,6 +13,24 @@ import { clamp } from '../util/math.js';
 
 const TRAIL = 3;
 
+/** Color of a punch in flight, by the thrower's shop gloves. */
+const GLOVE_COLOR = { violet: 0x6c2bd9, gold: 0xd9a92c, polka: 0xc92a24, legend: 0xf2c94c };
+
+function ringTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(128, 128, 70, 128, 128, 126);
+  grd.addColorStop(0, 'rgba(255,255,255,0)');
+  grd.addColorStop(0.55, 'rgba(255,255,255,0.9)');
+  grd.addColorStop(0.7, 'rgba(255,255,255,1)');
+  grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd;
+  g.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c);
+  return t;
+}
+
 export class Fx {
   constructor(scene) {
     this.scene = scene;
@@ -25,6 +43,7 @@ export class Fx {
     this.cuff = new THREE.MeshBasicMaterial({ color: 0x1a1a1a, transparent: true, opacity: 0.8, depthWrite: false });
     this.dropGeo = new THREE.SphereGeometry(0.012, 6, 5);
     this.dropMat = new THREE.MeshBasicMaterial({ color: 0xdfe8f2, transparent: true, opacity: 0.8, depthWrite: false });
+    this.goldMat = new THREE.MeshBasicMaterial({ color: 0xffcf4a, transparent: true, opacity: 0.95, depthWrite: false });
   }
 
   /**
@@ -38,8 +57,8 @@ export class Fx {
    * @param {'red'|'blue'} o.corner
    * @param {number} [o.hookSide]  +1 / -1: which side a hook comes around from
    */
-  launch({ id, kind, from, to, start, end, corner, hookSide = 1 }) {
-    const color = cornerColor(corner);
+  launch({ id, kind, from, to, start, end, corner, hookSide = 1, glove = 'classic' }) {
+    const color = GLOVE_COLOR[glove] ?? cornerColor(corner);
     const mats = [];
     const meshes = [];
     for (let i = 0; i <= TRAIL; i++) {
@@ -67,7 +86,24 @@ export class Fx {
         : kind === 'upper'
           ? mid.clone().add(new THREE.Vector3(0, -0.75, 0))
           : mid;
-    this.flying.push({ id, kind, from: from.clone(), ctrl, to: to.clone(), start, end, meshes, mats, fate: null, fateAt: 0 });
+    this.flying.push({ id, kind, from: from.clone(), ctrl, to: to.clone(), start, end, meshes, mats, fate: null, fateAt: 0, legend: glove === 'legend' });
+  }
+
+  /** «Легенда»: a clean hit bursts into a golden shockwave. */
+  legend(pos, now, scale = 1) {
+    this.ringMap ??= ringTexture();
+    for (const [delay, size] of [
+      [0, 1.3],
+      [90, 0.9],
+    ]) {
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.ringMap, color: 0xf2c94c, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+      s.position.copy(pos);
+      s.visible = false;
+      this.scene.add(s);
+      this.bursts.push({ s, start: now + delay, dur: 420, scale: size * scale, ring: true });
+    }
+    this.burst(pos, { scale: 0.8 * scale, now, tint: 0xffd873 });
+    this.sweat(pos, now, 22, this.goldMat);
   }
 
   /** The impact was judged: hit / crit / blocked burst at the target, a miss flies past. */
@@ -77,7 +113,10 @@ export class Fx {
     p.fate = outcome;
     p.fateAt = now;
     const where = at ?? p.to;
-    if (outcome === 'hit' || outcome === 'crit') {
+    if ((outcome === 'hit' || outcome === 'crit') && p.legend) {
+      this.legend(where, now, at ? 1 : 0.45);
+      this.shake = Math.max(this.shake, 0.5);
+    } else if (outcome === 'hit' || outcome === 'crit') {
       this.burst(where, { scale: outcome === 'crit' ? 0.75 : 0.5, now });
       this.sweat(where, now, outcome === 'crit' ? 16 : 10);
     } else if (outcome === 'blocked') {
@@ -99,9 +138,9 @@ export class Fx {
     this.bursts.push({ s, start: now, dur: 170, scale });
   }
 
-  sweat(pos, now, n = 10) {
+  sweat(pos, now, n = 10, mat = this.dropMat) {
     for (let i = 0; i < n; i++) {
-      const m = new THREE.Mesh(this.dropGeo, this.dropMat);
+      const m = new THREE.Mesh(this.dropGeo, mat);
       m.position.copy(pos);
       const v = new THREE.Vector3((Math.random() - 0.5) * 2.2, Math.random() * 1.6 + 0.4, (Math.random() - 0.5) * 1.6 - 0.4);
       this.scene.add(m);
@@ -141,6 +180,19 @@ export class Fx {
     for (let i = this.bursts.length - 1; i >= 0; i--) {
       const b = this.bursts[i];
       const k = (now - b.start) / b.dur;
+      if (k < 0) continue;
+      b.s.visible = true;
+      if (b.ring) {
+        if (k >= 1) {
+          this.scene.remove(b.s);
+          b.s.material.dispose();
+          this.bursts.splice(i, 1);
+          continue;
+        }
+        b.s.scale.setScalar(b.scale * (0.2 + 1.4 * Math.sqrt(k)));
+        b.s.material.opacity = (1 - k) * 0.95;
+        continue;
+      }
       if (k >= 1) {
         this.scene.remove(b.s);
         b.s.material.dispose();

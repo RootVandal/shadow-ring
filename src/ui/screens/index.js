@@ -7,6 +7,7 @@ import { ResultsScreen } from './results.js';
 import { TutorialScreen } from './tutorial.js';
 import { LobbyScreen } from './lobby.js';
 import { RecordsScreen } from './records.js';
+import { ShopScreen } from './shop.js';
 
 export const SCREENS = {
   landing: LandingScreen,
@@ -19,4 +20,5 @@ export const SCREENS = {
   fight: FightScreen,
   results: ResultsScreen,
   records: RecordsScreen,
+  shop: ShopScreen,
 };

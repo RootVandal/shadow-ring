@@ -2,7 +2,8 @@ import qrcode from 'qrcode';
 import { Screen } from '../screen.js';
 import { tile } from './menu.js';
 import { h, clear, mmss } from '../../util/dom.js';
-import { hostRoom, joinRoom, quickMatch } from '../../net/peer.js';
+import { hostRoom, joinRoom, quickMatch, profile } from '../../net/peer.js';
+import { wallet } from '../../game/shop.js';
 import { RemoteLink } from '../../net/remote.js';
 
 const ERRORS = {
@@ -24,6 +25,7 @@ export class LobbyScreen extends Screen {
     app.stage.setMode('showcase');
     app.cursor.setEnabled(true);
     this.abort = new AbortController();
+    profile.glove = wallet().equipped;
     this.body = h('div', { style: { display: 'grid', gap: '22px', alignContent: 'start' } });
     this.mount(
       h(
@@ -172,7 +174,7 @@ export class LobbyScreen extends Screen {
       ),
     );
     app.voice.say(`Соперник найден: ${foeName}`);
-    this.later(1800, () => app.go('fight', { mode: 'online', link, role, foeName }));
+    this.later(1800, () => app.go('fight', { mode: 'online', link, role, foeName, foeGlove: String(hello.glove || 'classic') }));
   }
 
   #fail(e) {

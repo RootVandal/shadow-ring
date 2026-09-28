@@ -5,6 +5,7 @@ import { verdict } from '../../game/coach.js';
 import { recordFight, scoreOf } from '../../game/records.js';
 import { PoseAnimator } from '../../render/animator.js';
 import { KIND } from '../../strings.js';
+import { earn, WIN_REWARD } from '../../game/shop.js';
 
 const pct = (x) => (x == null ? '—' : `${Math.round(x * 100)}%`);
 
@@ -27,6 +28,8 @@ export class ResultsScreen extends Screen {
     const outcome = { ...result, secondsLeft };
     const score = scoreOf(report, outcome, modeKey);
     const win = result.winner === 'me';
+    const reward = mode === 'online' && win ? WIN_REWARD : 0;
+    const purse = reward ? earn(reward) : null;
     const saved = recordFight({
       at: Date.now(),
       mode: modeKey,
@@ -72,6 +75,7 @@ export class ResultsScreen extends Screen {
             h('p.muted.mono', { style: { fontSize: '13px', letterSpacing: '.12em', textTransform: 'uppercase' } }, `${app.settings.name} vs ${foeName}`),
             h(`h1.verdict${win ? '.is-win' : result.winner === 'foe' ? '.is-loss' : ''}`, title),
             h('p.verdict__how', how),
+            purse && h('p.reward', `+$${reward} · на счету $${purse.money.toLocaleString('ru-RU')}`),
             h(
               'div.score',
               h('div.grade', v.grade),
@@ -165,7 +169,7 @@ export class ResultsScreen extends Screen {
     if (!this.meAgain || !this.peerAgain) return;
     const { params } = this;
     this.keepLink = true;
-    this.app.go('fight', { mode: 'online', link: this.link, role: params.role, foeName: params.foeName });
+    this.app.go('fight', { mode: 'online', link: this.link, role: params.role, foeName: params.foeName, foeGlove: params.foeGlove });
   }
 
   #leave(to) {

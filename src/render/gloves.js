@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { COLORS, gloveMaterial, makeGlove } from './materials.js';
+import { COLORS, gloveMaterial, gloveMaterialFor, makeGlove } from './materials.js';
 import { expAlpha } from '../util/math.js';
 
 // The player's own gloves in first person. They follow the real fists: raise a
@@ -16,6 +16,7 @@ export class FirstPersonGloves {
     camera.add(this.group);
     const trim = new THREE.MeshStandardMaterial({ color: COLORS.bone, roughness: 0.6 });
     const mat = gloveMaterial('red');
+    this.mat = mat;
     this.ghostMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, depthWrite: false });
     this.gloves = {};
     this.ghosts = {};
@@ -35,6 +36,14 @@ export class FirstPersonGloves {
       this.snap[side] = null;
     }
     this.t = 0;
+  }
+
+  /** Puts on gloves from the shop. */
+  setGlove(id) {
+    const next = gloveMaterialFor(id, 'red');
+    for (const g of Object.values(this.gloves)) g.traverse((o) => o.material === this.mat && (o.material = next));
+    this.mat.dispose();
+    this.mat = next;
   }
 
   /** A recognized punch: the glove snaps out to full extension and back. */

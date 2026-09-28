@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { rimMaterial, gloveMaterial, makeGlove, cornerColor, COLORS } from './materials.js';
+import { rimMaterial, gloveMaterial, gloveMaterialFor, makeGlove, cornerColor, COLORS } from './materials.js';
 import { GUARD } from './poses.js';
 import { expAlpha } from '../util/math.js';
 
@@ -93,6 +93,16 @@ export class Avatar {
     this.flash = 0;
     this.t = 0;
     this.world = { head: new THREE.Vector3(), lGlove: new THREE.Vector3(), rGlove: new THREE.Vector3() };
+  }
+
+  /** The opponent's gloves from the shop ('classic' = corner color). */
+  setGlove(id = 'classic') {
+    if (this.gloveId === id) return;
+    this.gloveId = id;
+    const next = gloveMaterialFor(id, this.corner);
+    for (const g of Object.values(this.gloves)) g.traverse((o) => o.material === this.gloveMat && (o.material = next));
+    this.gloveMat.dispose();
+    this.gloveMat = next;
   }
 
   /**

@@ -11,6 +11,7 @@ import { COUNTER, isLanded } from '../../game/rules.js';
 import { PoseAnimator } from '../../render/animator.js';
 import { KIND, DEFENSE_WORD, TIPS } from '../../strings.js';
 import { CONFIG } from '../../config.js';
+import { wallet } from '../../game/shop.js';
 
 const other = (side) => (side === 'left' ? 'right' : 'left');
 
@@ -34,6 +35,10 @@ export class FightScreen extends Screen {
     this.me = new Fighter({ name: app.settings.name, corner: 'red' });
     this.foe = new Fighter({ name: this.online ? params.foeName : 'Тень', corner: 'blue' });
     this.koAnim = null;
+    this.myGlove = wallet().equipped;
+    this.foeGlove = this.online ? params.foeGlove ?? 'classic' : 'classic';
+    app.stage.gloves.setGlove(this.myGlove);
+    app.stage.foe.setGlove(this.foeGlove);
     if (this.online) {
       this.link = params.link;
       app.foeDriver = (now, dt) => (this.koAnim ? this.koAnim.update(dt) : this.link.poseAt(now));
@@ -215,6 +220,7 @@ export class FightScreen extends Screen {
       start: now,
       end: now + flight,
       corner: 'red',
+      glove: this.myGlove,
       hookSide: attack.side === 'left' ? -1 : 1,
     });
   }
@@ -257,6 +263,7 @@ export class FightScreen extends Screen {
       start: now,
       end: impactAt,
       corner: 'blue',
+      glove: this.foeGlove,
       hookSide: attack.side === 'left' ? 1 : -1,
     });
     this.hud.showTelegraph(attack, now, impactAt, this.showHints ? DEFENSE_WORD[COUNTER[attack.kind]] : null);
@@ -368,6 +375,7 @@ export class FightScreen extends Screen {
       mode: this.params.mode,
       level: this.params.level,
       foeName: this.foe.name,
+      foeGlove: this.params.foeGlove,
       round: match.round,
       secondsLeft,
       koSeconds,
@@ -381,6 +389,7 @@ export class FightScreen extends Screen {
 
   exit() {
     super.exit();
+    this.app.stage.foe.setGlove('classic');
     const { app } = this;
     app.foeDriver = null;
     app.tracker.warnGuard = false;
