@@ -1738,6 +1738,104 @@ p {
   }
 }
 
+/* ─── Watching other fights (ui/screens/watch.js) ─────────────────────── */
+
+.hud--tv .hud__bottom,
+.hud--tv .readout,
+.hud--tv .telegraph {
+  display: none;
+}
+
+.tv-tag {
+  position: absolute;
+  left: 50%;
+  top: 104px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 700 12px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+
+.tv-tag i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--red);
+  animation: tv-blink 1.2s steps(2, jump-none) infinite;
+}
+
+@keyframes tv-blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.tv-leave {
+  position: absolute;
+  right: var(--gutter);
+  top: 118px;
+}
+
+.bet {
+  position: absolute;
+  left: 50%;
+  bottom: var(--gutter);
+  transform: translateX(-50%);
+  width: min(460px, calc(100% - 2 * var(--gutter)));
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  padding: 14px 16px;
+  background: rgba(14, 13, 12, 0.88);
+  border: 2px solid var(--line);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.bet b {
+  font: 400 22px/1.1 var(--display);
+  text-transform: uppercase;
+}
+
+.bet span {
+  color: var(--bone-2);
+  font-size: 14px;
+}
+
+.bet__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.bet__chip {
+  padding: 6px 12px;
+  border: 2px solid var(--line);
+  background: transparent;
+  color: var(--bone);
+  font: 700 14px var(--mono);
+  cursor: pointer;
+}
+
+.bet__chip.is-on {
+  border-color: var(--tape);
+  color: var(--tape);
+}
+
+.bet button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.bet__blue {
+  background: var(--blue);
+}
+
 /* ─── Small screens & phones ──────────────────────────────────────────── */
 
 /* Screens let touches through to the scene (#ui > * above), so a swipe on text

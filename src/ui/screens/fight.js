@@ -12,6 +12,8 @@ import { PoseAnimator } from '../../render/animator.js';
 import { KIND, DEFENSE_WORD, TIPS } from '../../strings.js';
 import { CONFIG } from '../../config.js';
 import { wallet, isOneHit } from '../../game/shop.js';
+import { Broadcast } from '../../net/broadcast.js';
+import { packPose } from '../../net/remote.js';
 
 const other = (side) => (side === 'left' ? 'right' : 'left');
 
@@ -70,6 +72,7 @@ export class FightScreen extends Screen {
     this.hud.el.append(quit);
     if (this.online) this.#foeCam();
     this.mount(this.hud.el);
+    if (this.online && params.role === 'host' && app.settings.spectators !== false) this.#tvStart();
 
     const t = app.tracker;
     this.listen(t, 'punch', (ev) => this.#punch(ev));
@@ -117,6 +120,13 @@ export class FightScreen extends Screen {
       if (this.poseIn <= 0) {
         this.poseIn = 1 / CONFIG.net.poseHz;
         this.link.sendPose(app.tracker.lastFrame, def);
+      }
+    }
+    if (this.tv) {
+      try {
+        this.#tvFrame(now, dt, def);
+      } catch {
+        /* трансляция не должна ломать бой */
       }
     }
   }
@@ -233,6 +243,7 @@ export class FightScreen extends Screen {
 
   #landed({ attack, outcome, damage }) {
     const { app, hud } = this;
+    this.#tv('hit', { to: 'blue', outcome, dmg: Math.round(damage) });
     const now = performance.now();
     this.stats.landed({ attack, outcome, damage });
     const body = attack.zone === 'body';
@@ -278,6 +289,7 @@ export class FightScreen extends Screen {
 
   #defended({ attack, outcome, damage, lesson }) {
     const { app, hud } = this;
+    this.#tv('hit', { to: 'red', outcome, dmg: Math.round(damage) });
     const now = performance.now();
     this.stats.defended({ outcome, damage, lesson });
     app.stage.fx.resolve(`i${attack.id}`, outcome, now);
@@ -342,6 +354,8 @@ export class FightScreen extends Screen {
 
   #over(result) {
     const { app, hud, match } = this;
+    const side = (w) => (w === 'me' ? 'red' : w === 'foe' ? 'blue' : 'draw');
+    this.#tv('end', { winner: side(result.winner), method: result.method, wins: [match.wins.me, match.wins.foe] });
     const now = performance.now();
     hud.clearTelegraphs();
     app.sfx.bell(3);
@@ -395,7 +409,51 @@ export class FightScreen extends Screen {
     this.later(3400, () => app.go('results', payload));
   }
 
+  // ── трансляция для зрителей (net/broadcast.js) ─────────────────────────
+  // Только у хоста онлайн-боя. Любая ошибка здесь не должна трогать сам бой,
+  // поэтому всё в try/catch: в худшем случае зрители просто не увидят бой.
+
+  #tvStart() {
+    this.tvIn = 0;
+    const info = { red: { name: this.me.name, glove: this.myGlove }, blue: { name: this.foe.name, glove: this.foeGlove }, rounds: this.match.rules.rounds };
+    Broadcast.open(info)
+      .then((tv) => (this.exited ? tv.close() : (this.tv = tv)))
+      .catch(() => {});
+  }
+
+  #tv(t, payload) {
+    try {
+      if (this.tv?.watching) this.tv.send(t, payload);
+    } catch {
+      /* зрители не получат это сообщение — бой идёт дальше */
+    }
+  }
+
+  #tvFrame(now, dt, def) {
+    if (!this.tv?.watching) return;
+    this.tvIn -= dt;
+    if (this.tvIn > 0) return;
+    this.tvIn = 1 / CONFIG.spectate.tvHz;
+    const m = this.match;
+    this.#tv('tv', {
+      r: packPose(this.app.tracker.lastFrame, def),
+      b: this.link.lastRaw ?? null,
+      hp: [Math.round(this.me.hp), Math.round(this.foe.hp)],
+      st: [Math.round(this.me.stamina), Math.round(this.foe.stamina)],
+      ph: m.phase,
+      rd: m.round,
+      ms: Math.round(m.timeLeft(now)),
+      w: [m.wins.me, m.wins.foe],
+    });
+  }
+
   exit() {
+    this.exited = true;
+    try {
+      this.tv?.close();
+    } catch {
+      /* эфир уже закрыт */
+    }
     super.exit();
     this.app.stage.foe.setGlove('classic');
     const { app } = this;

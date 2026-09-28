@@ -164,6 +164,7 @@ export class RemoteLink extends Emitter {
 
   #pose(m) {
     if (!Array.isArray(m.j) || m.j.length !== JOINT_NAMES.length * 3) return;
+    this.lastRaw = m; // для трансляции зрителям (net/broadcast.js)
     this.buffer.push({ at: performance.now(), pose: unpackPose(m) });
     if (this.buffer.length > 16) this.buffer.shift();
   }

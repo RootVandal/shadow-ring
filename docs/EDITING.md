@@ -31,6 +31,8 @@ python tools/serve.py        # запуск: http://localhost:8080
 | Цвет/материал перчатки | `src/render/materials.js` → `gloveMaterialFor` | |
 | Промокоды | `src/game/shop.js` | перчатки — поле `code` в `GLOVES`, деньги — `MONEY_CODES` |
 | Награда за онлайн-победу | `src/game/shop.js` → `WIN_REWARD` | |
+| Трансляции боёв и ставки (сколько зрителей, суммы, выигрыш) | `src/config.js` → `spectate` | `bets`, `payout`, `betUntilRound` |
+| Экран «Смотреть бои» | `src/ui/screens/watch.js`, эфир — `src/net/broadcast.js` | |
 | Музыка | `src/audio/music.js` | темп `BPM`, ритм — массивы `KICK`, `SNARE`, `HAT` |
 | Звуки ударов, гонг | `src/audio/sfx.js` | |
 | Цвета, шрифты, вид кнопок | `css/app.css` → блок `:root` в начале | переменные `--red`, `--blue`, `--tape`… |

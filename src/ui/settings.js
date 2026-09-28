@@ -46,6 +46,7 @@ export function openSettings(app) {
     ),
     h('label.field', 'Звук', h('input', { type: 'checkbox', checked: s.sound, onchange: (e) => set({ sound: e.target.checked }) })),
     h('label.field', 'Музыка', h('input', { type: 'checkbox', checked: s.music, onchange: (e) => set({ music: e.target.checked }) })),
+    h('label.field', 'Зрители могут смотреть мои онлайн-бои', h('input', { type: 'checkbox', checked: s.spectators, onchange: (e) => set({ spectators: e.target.checked }) })),
     h('label.field', 'Шум зала (гул зрителей)', h('input', { type: 'checkbox', checked: s.hall, onchange: (e) => set({ hall: e.target.checked }) })),
     h(
       'label.field',
