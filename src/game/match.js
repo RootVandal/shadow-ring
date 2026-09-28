@@ -115,6 +115,11 @@ export class Match extends Emitter {
       tired,
       window: Math.round(WINDOW[ev.kind] - clamp(((ev.speed ?? 1) - 1) * 150, 0, 120)),
     };
+    // Перчатки «Ваншот»: мощность с запасом, чтобы даже блок снял всё HP (уклон и нырок спасают).
+    if (this.rules.oneHit) {
+      attack.power = this.rules.maxHp * 4;
+      attack.onehit = true;
+    }
     this.pending.set(attack.id, { attack, at: now });
     this.link.sendAttack(attack, now);
     this.emit('outgoing', attack);

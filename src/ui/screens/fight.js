@@ -11,7 +11,7 @@ import { COUNTER, isLanded } from '../../game/rules.js';
 import { PoseAnimator } from '../../render/animator.js';
 import { KIND, DEFENSE_WORD, TIPS } from '../../strings.js';
 import { CONFIG } from '../../config.js';
-import { wallet } from '../../game/shop.js';
+import { wallet, isOneHit } from '../../game/shop.js';
 
 const other = (side) => (side === 'left' ? 'right' : 'left');
 
@@ -56,7 +56,10 @@ export class FightScreen extends Screen {
       authority: !this.online || params.role === 'host',
       defense: (now, windowMs) => app.tracker.defenseAt(now, windowMs),
       // Both modes: three rounds, a KO takes the round, 3 s rest, full HP again, most rounds wins.
-      rules: this.online ? { ...CONFIG.fight, ...CONFIG.onlineFight } : { ...CONFIG.fight, breakSeconds: 3, roundKo: true, resetHp: true },
+      rules: {
+        ...(this.online ? { ...CONFIG.fight, ...CONFIG.onlineFight } : { ...CONFIG.fight, breakSeconds: 3, roundKo: true, resetHp: true }),
+        oneHit: isOneHit(this.myGlove),
+      },
     });
     this.match = m;
     this.stats = new MatchStats();
@@ -387,6 +390,7 @@ export class FightScreen extends Screen {
       foeHp: this.foe.hp,
       link: this.online ? this.link : null,
       role: this.params.role,
+      oneHit: match.rules.oneHit,
     };
     this.later(3400, () => app.go('results', payload));
   }

@@ -8,6 +8,7 @@ import { Coach, roundTalk, verdict } from '../src/game/coach.js';
 import { scoreOf, leaderboard } from '../src/game/records.js';
 import { mulberry32 } from '../src/util/math.js';
 import { CONFIG } from '../src/config.js';
+import { GLOVES, hashCode } from '../src/game/shop.js';
 
 const OPEN = { guard: 'open', slip: false, duck: false };
 const FULL = { guard: 'full', slip: false, duck: false };
@@ -356,4 +357,33 @@ test('records: a KO win outscores a points loss; board is sorted', () => {
   assert.above(win, loss);
   const board = leaderboard([{ score: 5 }, { score: 50 }, { score: 20 }]);
   assert.equal(board.map((e) => e.score).join(','), '50,20,5');
+});
+
+test('shop: the one-hit gloves are hidden and open only with their code', () => {
+  const g = GLOVES.find((x) => x.id === 'onehit');
+  assert.ok(g.hidden);
+  assert.equal(g.code, undefined);
+  assert.equal(hashCode('ONEHIT'), g.codeHash);
+  assert.ok(hashCode('ONEHITT') !== g.codeHash);
+});
+
+test('match: in one-hit gloves any punch that lands takes the round, a slip still saves', () => {
+  const me = new Fighter({ name: 'Я', corner: 'red' });
+  const foe = new Fighter({ name: 'Тень', corner: 'blue' });
+  const bot = new BotLink({ level: 'easy', rnd: mulberry32(3) });
+  const m = new Match({ me, foe, link: bot, defense: () => FULL, rules: { ...CONFIG.fight, breakSeconds: 3, roundKo: true, resetHp: true, oneHit: true } });
+  const hits = [];
+  m.on('landed', (x) => hits.push(x));
+  m.start(0);
+  let now = 0;
+  for (let i = 0; i < 4000 && !hits.some((x) => x.damage > 0); i++) {
+    now += 16;
+    m.update(now, 0.016);
+    if (i % 60 === 0) m.throwPunch({ kind: 'cross', side: 'right', quality: 0.8 }, now);
+  }
+  const hit = hits.find((x) => x.damage > 0);
+  assert.ok(hit, 'a punch landed');
+  assert.equal(hit.hp, 0);
+  for (const x of hits.filter((x) => x.outcome === 'slipped' || x.outcome === 'ducked')) assert.equal(x.damage, 0);
+  assert.equal(resolveHit({ kind: 'cross', power: 400 }, SLIP).damage, 0);
 });

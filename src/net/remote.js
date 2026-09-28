@@ -65,7 +65,8 @@ function sanitizeAttack(a) {
     kind: a.kind,
     side: a.side === 'right' ? 'right' : 'left',
     quality: clamp(Number(a.quality) || 0, 0, 1),
-    power: clamp(Number(a.power) || 0, 0, 16),
+    // Перчатки «Ваншот» (соперник видит их на экране) — единственное исключение из лимита.
+    power: a.onehit === true ? 400 : clamp(Number(a.power) || 0, 0, 16),
     zone: a.zone === 'body' ? 'body' : 'head',
     window: clamp(Number(a.window) || 700, 450, 900),
   };
@@ -124,7 +125,7 @@ export class RemoteLink extends Emitter {
   }
 
   sendAttack(a) {
-    this.wire.send('atk', { a: { id: a.id, kind: a.kind, side: a.side, quality: a.quality, power: a.power, window: a.window, zone: a.zone } });
+    this.wire.send('atk', { a: { id: a.id, kind: a.kind, side: a.side, quality: a.quality, power: a.power, window: a.window, zone: a.zone, onehit: a.onehit === true } });
   }
 
   sendResult(r) {

@@ -38,9 +38,33 @@ export const GLOVES = [
     effect: 'legend',
     desc: 'Чёрная кожа и золотая кромка. Каждый точный удар разрывается золотой ударной волной. Не продаются — только для тех, кто знает слово.',
   },
+  // Перчатки разработчика: в магазине их не видно, пока код не введён (hidden).
+  // Любой пропущенный удар — нокаут в раунде. Бой в них не идёт в рекорды и не приносит денег.
+  // Код хранится хэшем (codeHash = hashCode('КОД')), чтобы его нельзя было прочитать в исходниках.
+  {
+    id: 'onehit',
+    name: 'Ваншот',
+    codeHash: 'c20a8190',
+    hidden: true,
+    effect: 'onehit',
+    desc: 'Перчатки разработчика. Любой удар, который дошёл до цели, — нокаут. От уклона и нырка всё равно можно уйти. Бои в них не идут в рекорды и не приносят денег.',
+  },
 ];
 
 export const gloveById = (id) => GLOVES.find((g) => g.id === id) ?? GLOVES[0];
+
+/** Бьёт ли надетая перчатка с одного удара. */
+export const isOneHit = (id) => gloveById(id).effect === 'onehit';
+
+/** Короткий хэш строки (FNV-1a) — для скрытых кодов. */
+export function hashCode(s) {
+  let h = 0x811c9dc5;
+  for (const ch of s) {
+    h ^= ch.codePointAt(0);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16);
+}
 
 function read() {
   const w = load('wallet', null);
@@ -93,7 +117,7 @@ export function redeem(code) {
     save('wallet', w);
     return { money: MONEY_CODES[c] };
   }
-  const g = GLOVES.find((x) => x.code && x.code === c);
+  const g = GLOVES.find((x) => (x.code && x.code === c) || (x.codeHash && x.codeHash === hashCode(c)));
   if (!g) return null;
   const w = read();
   if (!w.owned.includes(g.id)) w.owned.push(g.id);

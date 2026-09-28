@@ -15,7 +15,7 @@ export class ResultsScreen extends Screen {
 
   enter() {
     const { app, params } = this;
-    const { report, result, mode, level, foeName, round, secondsLeft, koSeconds, myHp, foeHp, link } = params;
+    const { report, result, mode, level, foeName, round, secondsLeft, koSeconds, myHp, foeHp, link, oneHit } = params;
     app.stage.setMode('showcase');
     app.cursor.setEnabled(true);
     app.tracker.warnGuard = false;
@@ -30,9 +30,10 @@ export class ResultsScreen extends Screen {
     const outcome = { ...result, secondsLeft };
     const score = scoreOf(report, outcome, modeKey);
     const win = result.winner === 'me';
-    const reward = mode === 'online' && win ? WIN_REWARD : 0;
+    // Бой в перчатках «Ваншот» — для фана: без денег и без рекордов.
+    const reward = mode === 'online' && win && !oneHit ? WIN_REWARD : 0;
     const purse = reward ? earn(reward) : null;
-    const saved = recordFight({
+    const saved = oneHit ? { broke: [] } : recordFight({
       at: Date.now(),
       mode: modeKey,
       opponent: foeName,

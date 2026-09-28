@@ -83,6 +83,11 @@ export function gloveMaterialFor(id, corner) {
       m.emissive = new THREE.Color(0x2a1d00);
       return m;
     }
+    case 'onehit': {
+      const m = rimMaterial({ color: 0x3a0606, rim: 0xff3b1f, strength: 1.8, power: 2, roughness: 0.28 });
+      m.emissive = new THREE.Color(0x330300);
+      return m;
+    }
     default:
       return gloveMaterial(corner);
   }

@@ -63,6 +63,8 @@ python tools/serve.py        # запуск: http://localhost:8080
 
 **Новую перчатку.** Добавьте запись в `GLOVES` (`src/game/shop.js`) и её материал в `gloveMaterialFor` (`src/render/materials.js`) по такому же `id`. Если нужен свой цвет летящего удара, добавьте его в `GLOVE_COLOR` (`src/render/fx.js`).
 
+**Скрытую перчатку.** Как обычную, но с `hidden: true` и `codeHash` вместо `code`: хэш кода даёт `hashCode('КОД')` из `src/game/shop.js`. В магазине она появится только после ввода кода.
+
 **Новый промокод на деньги.** Допишите строчку в `MONEY_CODES` в `src/game/shop.js`: `ИМЯКОДА: сумма`.
 
 **Новую подсказку тренера.** Добавьте текст в `TIPS` (`src/strings.js`) и вызовите `app.coach.tip('код_подсказки')` там, где ошибка обнаруживается.

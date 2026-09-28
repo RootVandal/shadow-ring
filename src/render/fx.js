@@ -14,7 +14,7 @@ import { clamp } from '../util/math.js';
 const TRAIL = 3;
 
 /** Color of a punch in flight, by the thrower's shop gloves. */
-const GLOVE_COLOR = { violet: 0x6c2bd9, gold: 0xd9a92c, polka: 0xc92a24, legend: 0xf2c94c };
+const GLOVE_COLOR = { violet: 0x6c2bd9, gold: 0xd9a92c, polka: 0xc92a24, legend: 0xf2c94c, onehit: 0xff3b1f };
 
 function ringTexture() {
   const c = document.createElement('canvas');
