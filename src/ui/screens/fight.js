@@ -35,7 +35,7 @@ export class FightScreen extends Screen {
     app.music.setLevel(0.15);
 
     this.me = new Fighter({ name: app.settings.name, corner: 'red' });
-    this.foe = new Fighter({ name: this.online ? params.foeName : 'Тень', corner: 'blue' });
+    this.foe = new Fighter({ name: this.online ? params.foeName : params.foeName ?? 'Тень', corner: 'blue' });
     this.koAnim = null;
     // Титулы над никами на плашках (у Тени титула нет).
     this.me.title = wallet().title;
@@ -48,6 +48,8 @@ export class FightScreen extends Screen {
     app.stage.gloves.setGlove(this.myGlove);
     app.stage.foe.setGlove(this.foeGlove);
     app.stage.foe.setShorts(this.online ? params.foeShorts ?? 'classic' : 'classic');
+    // «Свой соперник» (ui/screens/face.js): фото лица на манекене — только с ботом.
+    app.stage.foe.setFace(this.online ? null : params.face ?? null);
     if (this.online) {
       this.link = params.link;
       app.foeDriver = (now, dt) => (this.koAnim ? this.koAnim.update(dt) : this.link.poseAt(now));
@@ -393,6 +395,7 @@ export class FightScreen extends Screen {
       foeName: this.foe.name,
       foeGlove: this.params.foeGlove,
       foeShorts: this.params.foeShorts,
+      face: this.online ? null : this.params.face ?? null,
       foeTitle: this.params.foeTitle,
       foeRank: this.params.foeRank,
       quick: this.params.quick,
@@ -413,6 +416,7 @@ export class FightScreen extends Screen {
     super.exit();
     this.app.stage.foe.setGlove('classic');
     this.app.stage.foe.setShorts('classic');
+    this.app.stage.foe.setFace(null);
     const { app } = this;
     app.foeDriver = null;
     app.tracker.warnGuard = false;

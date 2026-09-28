@@ -28,6 +28,7 @@ export class ResultsScreen extends Screen {
     if (result.winner === 'me' && result.method === 'ko') pose.knockout();
     else if (result.winner === 'foe') pose.celebrate();
     app.foeDriver = (now, dt) => pose.update(dt);
+    if (params.face) app.stage.foe.setFace(params.face); // лежит с тем же лицом
 
     const modeKey = mode === 'online' ? 'online' : `bot:${level}`;
     const outcome = { ...result, secondsLeft };
@@ -163,7 +164,7 @@ export class ResultsScreen extends Screen {
   #rematch() {
     const { app, params } = this;
     if (params.mode !== 'online') {
-      app.go('fight', { mode: 'bot', level: params.level });
+      app.go('fight', { mode: 'bot', level: params.level, face: params.face, foeName: params.face ? params.foeName : undefined });
       return;
     }
     if (this.linkGone || !this.link?.open) {
@@ -207,6 +208,7 @@ export class ResultsScreen extends Screen {
   exit() {
     super.exit();
     this.app.foeDriver = null;
+    this.app.stage.foe.setFace(null);
     if (this.link && !this.keepLink) this.link.close();
   }
 }

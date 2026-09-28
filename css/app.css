@@ -1976,6 +1976,69 @@ p {
   font-size: 18px;
 }
 
+/* ─── «Свой соперник»: photo on the dummy's face (ui/screens/face.js) ─── */
+
+.face-setup {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+  max-width: 820px;
+}
+
+.face-stage {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+
+.face-preview {
+  width: 150px;
+  height: 200px;
+  border-radius: 50% / 45%;
+  border: 2px solid var(--line);
+  touch-action: none;
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.face-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.face-slider {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--bone-2);
+}
+
+.face-slider input {
+  pointer-events: auto;
+  accent-color: var(--tape);
+}
+
+.face-controls .field input[type="text"] {
+  pointer-events: auto;
+}
+
+.tile:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .face-setup {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+
+  .face-controls {
+    width: 100%;
+  }
+}
+
 /* ─── Small screens & phones ──────────────────────────────────────────── */
 
 /* Screens let touches through to the scene (#ui > * above), so a swipe on text

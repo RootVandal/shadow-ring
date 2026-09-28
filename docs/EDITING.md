@@ -35,6 +35,7 @@ python tools/serve.py        # запуск: http://localhost:8080
 | Ранги и какие перчатки за них | `src/game/ranked.js` → `RANKS`, перчатки — `GLOVES` с полем `rank` | вид значка — `.rank--<id>` в `css/app.css` |
 | Трусы (название, цена, описание) | `src/game/shop.js` → `SHORTS` | рисунок — `SHORTS_DRAW` в `src/render/materials.js` (центр картинки — спереди) |
 | Награда за онлайн-победу | `src/game/shop.js` → `WIN_REWARD` | |
+| «Свой соперник» (фото лица на манекене, только с ботом) | экран — `src/ui/screens/face.js`, как лицо ложится на голову — `Avatar.setFace` в `src/render/avatar.js` | |
 | Музыка | `src/audio/music.js` | темп `BPM`, ритм — массивы `KICK`, `SNARE`, `HAT` |
 | Звуки ударов, гонг | `src/audio/sfx.js` | |
 | Цвета, шрифты, вид кнопок | `css/app.css` → блок `:root` в начале | переменные `--red`, `--blue`, `--tape`… |

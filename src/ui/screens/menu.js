@@ -84,10 +84,11 @@ export class LevelScreen extends Screen {
         'section.screen.menu.shade-left',
         h('div.menu__head', h('h1.menu__title', 'Спарринг с Тенью')),
         h(
-          'div.tiles.tiles--3',
+          'div.tiles',
           tile({ title: L.easy[0], text: L.easy[1], num: 'уровень 1', accent: '.tile--tape', onclick: go('easy') }),
           tile({ title: L.normal[0], text: L.normal[1], num: 'уровень 2', onclick: go('normal') }),
           tile({ title: L.hard[0], text: L.hard[1], num: 'уровень 3', accent: '.tile--blue', onclick: go('hard') }),
+          tile({ title: 'Свой соперник', text: 'Загрузи фото лица — и оно появится на манекене.', num: 'фото', onclick: () => app.go('face') }),
         ),
         h(
           'div.menu__foot',

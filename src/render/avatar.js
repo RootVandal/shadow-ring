@@ -32,6 +32,8 @@ function placeBone(mesh, a, b) {
   mesh.quaternion.setFromUnitVectors(UP, dir.multiplyScalar(1 / len));
 }
 
+let faceGeo = null;
+
 export class Avatar {
   constructor({ corner = 'blue' } = {}) {
     this.corner = corner;
@@ -103,6 +105,36 @@ export class Avatar {
     for (const g of Object.values(this.gloves)) g.traverse((o) => o.material === this.gloveMat && (o.material = next));
     this.gloveMat.dispose();
     this.gloveMat = next;
+  }
+
+  /**
+   * Фото лица на голове — режим «Свой соперник» (ui/screens/face.js), только бой с ботом.
+   * canvas — готовая картинка 3:4 с мягкими краями; null — убрать.
+   * Лицо — кусочек сферы чуть больше головы, в прорези шлема; двигается вместе с головой.
+   */
+  setFace(canvas) {
+    if (this.face) {
+      this.parts.head.remove(this.face);
+      this.face.material.map?.dispose();
+      this.face.material.dispose();
+      this.face = null;
+    }
+    if (!canvas) return;
+    const map = new THREE.CanvasTexture(canvas);
+    map.colorSpace = THREE.SRGBColorSpace;
+    const mat = new THREE.MeshStandardMaterial({
+      map,
+      transparent: true,
+      depthWrite: false,
+      roughness: 0.75,
+      // Чуть светится, чтобы лицо было видно в тёмном зале.
+      emissive: 0xffffff,
+      emissiveMap: map,
+      emissiveIntensity: 0.35,
+    });
+    faceGeo ??= new THREE.SphereGeometry(0.1135, 32, 24, Math.PI / 2 - 0.78, 1.56, 0.42, 1.75);
+    this.face = new THREE.Mesh(faceGeo, mat);
+    this.parts.head.add(this.face);
   }
 
   /** Трусы из магазина ('classic' = цвет угла). */
