@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Dela+Gothic+One&family=JetBrains+Mono:wght@500;700&family=Onest:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/app.css" id="app-css">
   <script type="importmap">
     {
       "imports": {
@@ -28,6 +28,26 @@
   <canvas id="stage" aria-hidden="true"></canvas>
   <main id="ui" aria-live="polite"></main>
   <noscript><p class="noscript">Для игры нужен JavaScript.</p></noscript>
-  <script type="module" src="src/main.js"></script>
+  <script type="module">
+    // GitHub Pages lets browsers cache every file for 10 minutes. Right after a
+    // deploy that means a mix of old and new modules — a broken page, or two
+    // players on different versions. version.json (written by the deploy
+    // workflow) names the build: when it changes, refetch the game's files past
+    // the cache before anything runs. Locally there's no version.json — skip.
+    try {
+      const r = await fetch('version.json', { cache: 'no-store' });
+      if (r.ok) {
+        const { v, files } = await r.json();
+        let seen = null;
+        try { seen = localStorage.getItem('shadowring:build'); } catch {}
+        if (seen !== v) {
+          await Promise.all(files.map((f) => fetch(f, { cache: 'reload' }).catch(() => {})));
+          try { localStorage.setItem('shadowring:build', v); } catch {}
+        }
+        document.getElementById('app-css').href = `css/app.css?v=${encodeURIComponent(v)}`;
+      }
+    } catch {}
+    import('./src/main.js');
+  </script>
 </body>
 </html>
