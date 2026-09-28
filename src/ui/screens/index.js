@@ -8,7 +8,6 @@ import { TutorialScreen } from './tutorial.js';
 import { LobbyScreen } from './lobby.js';
 import { RecordsScreen } from './records.js';
 import { ShopScreen } from './shop.js';
-import { WatchScreen } from './watch.js';
 
 export const SCREENS = {
   landing: LandingScreen,
@@ -22,5 +21,4 @@ export const SCREENS = {
   results: ResultsScreen,
   records: RecordsScreen,
   shop: ShopScreen,
-  watch: WatchScreen,
 };

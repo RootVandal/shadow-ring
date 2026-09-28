@@ -24,7 +24,7 @@ export class NetError extends Error {
 }
 
 let PeerCtor = null;
-export async function peerLib() {
+async function peerLib() {
   if (!PeerCtor) {
     await loadScript(new URL('../../vendor/peerjs/peerjs.min.js', import.meta.url).href).catch((e) => {
       throw new NetError('lib', e);
@@ -40,7 +40,7 @@ export const roomLink = (code) => `${location.origin}${location.pathname}#room=$
 const roomId = (code) => `${CONFIG.net.prefix}room-${code}`;
 const slotId = (i) => `${CONFIG.net.prefix}quick-${i}`;
 
-export function openPeer(Peer, id = null) {
+function openPeer(Peer, id = null) {
   return new Promise((resolve, reject) => {
     const peer = id ? new Peer(id, { debug: 0 }) : new Peer({ debug: 0 });
     const cleanup = () => {
@@ -163,7 +163,7 @@ function waitFor(wire, type, ms) {
 }
 
 /** Opens `conn` or explains why not (nobody there / timeout). */
-export function connect(peer, targetId) {
+function connect(peer, targetId) {
   return new Promise((resolve, reject) => {
     const conn = peer.connect(targetId, { reliable: true, serialization: 'json' });
     const wire = new Wire(conn);

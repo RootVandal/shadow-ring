@@ -14,7 +14,7 @@ import { SCREENS } from './ui/screens/index.js';
 import { DebugPanel } from './ui/debug.js';
 import { load, save } from './util/store.js';
 
-const DEFAULTS = { name: '', stance: 'orthodox', sensitivity: 'normal', sound: true, music: true, hall: false, voice: true, model: 'lite', shareCam: true, graphics: 'auto', spectators: true };
+const DEFAULTS = { name: '', stance: 'orthodox', sensitivity: 'normal', sound: true, music: true, hall: false, voice: true, model: 'lite', shareCam: true, graphics: 'auto' };
 const FIRST = ['Тихий', 'Быстрый', 'Железный', 'Хитрый', 'Бешеный', 'Ночной', 'Левый', 'Точный'];
 const SECOND = ['Джеб', 'Хук', 'Кулак', 'Апперкот', 'Нырок', 'Уклон', 'Кросс', 'Клинч'];
 

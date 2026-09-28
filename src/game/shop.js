@@ -85,15 +85,6 @@ export function earn(amount) {
   return w;
 }
 
-/** Списать деньги (ставка на бой). false — не хватает. */
-export function spend(amount) {
-  const w = read();
-  if (!(amount > 0) || w.money < amount) return false;
-  w.money -= amount;
-  save('wallet', w);
-  return true;
-}
-
 /** @returns {{ok:boolean, reason?:'owned'|'money'|'code'}} */
 export function buy(id) {
   const w = read();

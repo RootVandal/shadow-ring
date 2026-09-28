@@ -37,7 +37,6 @@ export class MenuScreen extends Screen {
           tile({ key: 'online', num: '03 · pvp', accent: '.tile--blue', onclick: () => app.go('lobby') }),
           tile({ key: 'records', num: '04', onclick: () => app.go('records') }),
           tile({ title: 'Магазин', text: 'Перчатки, которые видит соперник. Деньги — за победы онлайн.', num: '05', accent: '.tile--tape', onclick: () => app.go('shop') }),
-          tile({ title: 'Смотреть бои', text: 'Чужие онлайн-бои в прямом эфире. Можно поставить на победителя.', num: '06 · live', accent: '.tile--blue', onclick: () => app.go('watch') }),
         ),
         h(
           'div.menu__foot',

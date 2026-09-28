@@ -9,8 +9,6 @@ import { expAlpha } from '../util/math.js';
 export const FOE_Z = -0.75;
 const EYE = new THREE.Vector3(0, 1.62, 0.85);
 const LOOK = new THREE.Vector3(0, 1.52, FOE_Z);
-/** Зрительский режим: бойцы стоят на ±SPEC_X друг напротив друга. */
-const SPEC_X = 0.68;
 
 /**
  * Owns the WebGL scene. Two camera modes:
@@ -74,28 +72,6 @@ export class Stage {
     this.mode = mode;
   }
 
-  /**
-   * Зрительский режим (ui/screens/watch.js): второй манекен — красный угол,
-   * оба боком к камере, камера как на телетрансляции. Выключение всё возвращает.
-   */
-  setSpectate(on) {
-    if (on && !this.red) {
-      this.red = new Avatar({ corner: 'red' });
-      this.scene.add(this.red.root);
-    }
-    this.spectating = on;
-    // Сначала поворот к сопернику, потом падение при нокауте — назад, а не вбок.
-    this.foe.root.rotation.order = on ? 'YXZ' : 'XYZ';
-    this.foe.root.rotation.y = on ? -Math.PI / 2 : 0;
-    this.foe.root.position.x = on ? SPEC_X : 0;
-    if (this.red) {
-      this.red.root.visible = on;
-      this.red.root.rotation.order = 'YXZ';
-      this.red.root.rotation.y = Math.PI / 2;
-      this.red.root.position.set(-SPEC_X, 0, FOE_Z);
-    }
-  }
-
   /** Head offset from the defense tracker (in shoulder widths): slips and ducks move the view. */
   setHead(lateral, drop) {
     this.headTarget.set(lateral, drop);
@@ -143,7 +119,6 @@ export class Stage {
 
     this.arena.update(now, dt);
     this.foe.update(dt);
-    if (this.spectating) this.red.update(dt);
     this.fx.update(now, dt);
     this.gloves.group.visible = this.blend > 0.6;
     if (this.gloves.group.visible) this.gloves.update(dt, this.playerInput, this.ghosts);
@@ -164,13 +139,6 @@ export class Stage {
     const k = this.blend * this.blend * (3 - 2 * this.blend);
     this.camera.position.lerpVectors(orbitPos, fpPos, k);
     this.camera.lookAt(new THREE.Vector3().lerpVectors(orbitLook, fpLook, k));
-    if (this.spectating) {
-      // Сбоку от ринга, медленно покачиваясь; на узком экране — дальше, чтобы влезли оба.
-      const far = this.camera.aspect < 0.8 ? 3.9 : 2.7;
-      const sway = Math.sin(this.orbit * 2) * 0.35;
-      this.camera.position.set(sway, 1.8, FOE_Z + far);
-      this.camera.lookAt(0, 1.2, FOE_Z);
-    }
     // On the lowest tier the scene is drawn at most maxFps times a second, which
     // leaves the main thread and the GPU to pose tracking.
     const maxFps = this.covered ? 10 : this.maxFps;
