@@ -1,25 +1,24 @@
 import { CONFIG } from '../config.js';
 
-// Combat rules. Every punch has a counter, which is what makes defense a skill
-// and not a coin flip:
+// ПРАВИЛА БОЯ. У каждого удара есть своя защита — поэтому защищаться надо
+// с умом, а не наугад:
 //
-//                 guard (both hands)   slip        duck
-//   jab / cross   25% damage           miss        miss
-//   hook          30%                  HIT +15%    miss
-//   uppercut      70% (splits guard)   miss        CRIT ×1.5
+//                 блок (обе руки)       уклон       нырок
+//   джеб / кросс  25% урона             мимо        мимо
+//   хук           30%                   ПОПАЛ +15%  мимо
+//   апперкот      70% (пробивает блок)  мимо        КРИТ ×1,5
 //
-// Straights are slipped, hooks are ducked, uppercuts are slipped — and ducking
-// into an uppercut is the worst thing you can do.
+// От прямых и апперкота — уклон, от хука — нырок. Нырнуть под апперкот — худшая ошибка.
 //
-// Two hit zones. Where the fist was at full extension decides (motion/punch-tracker.js):
-//   head  — everything above, as before
-//   body  — a punch thrown low. Weaker (×0.7, never a crit), but a slip or a
-//           duck moves only the head, so they don't help; the elbows of a real
-//           guard cover the ribs partly. Every body shot also takes stamina.
-// Uppercuts always go to the head.
+// Две зоны попадания (решает, где был кулак в конце удара, motion/punch-tracker.js):
+//   голова — обычные удары;
+//   корпус — удар, брошенный низко: слабее (×0,7, без крита), но уклон и нырок
+//            от него не спасают (двигается только голова), локти блока прикрывают
+//            частично, и каждый удар в корпус отнимает выносливость.
+// Апперкот всегда идёт в голову.
 
-// base damage is tuned so an average fight against the normal bot reaches
-// round 2–3: a knockout has to be earned, not found in the first 20 seconds.
+// base — урон удара, cost — сколько выносливости он тратит. Урон подобран так,
+// чтобы средний бой со средним ботом доходил до 2–3 раунда.
 export const PUNCHES = {
   jab: { base: 5, cost: 8 },
   cross: { base: 7, cost: 11 },

@@ -1,7 +1,8 @@
 import { load, save } from '../util/store.js';
 
-// Glove shop: money for online wins, gloves the opponent sees on you.
-// Everything lives in this browser (like the records).
+// МАГАЗИН ПЕРЧАТОК: деньги за онлайн-победы, перчатки видит соперник.
+// Всё хранится в этом браузере (как и рекорды).
+// Добавить перчатку: запись в GLOVES + материал в render/materials.js (gloveMaterialFor).
 
 export const WIN_REWARD = 250;
 
@@ -74,7 +75,7 @@ export function buy(id) {
   return { ok: true };
 }
 
-/** Codes that pay out money instead of a glove — once per account. */
+/** Промокоды на деньги (срабатывают один раз): КОД: сумма. Коды на перчатки — поле `code` в GLOVES. */
 const MONEY_CODES = { MILLIONARE: 1_000_000 };
 
 /**
