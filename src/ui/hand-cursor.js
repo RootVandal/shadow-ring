@@ -13,6 +13,7 @@ const SVG = `<svg viewBox="-32 -32 64 64" aria-hidden="true">
   <circle class="ring-bg" r="${R}" fill="none" stroke-width="5"/>
   <circle class="ring" r="${R}" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}" transform="rotate(-90)"/>
   <path d="M-11 -4c0-8 5-12 12-12s12 5 12 12v7c0 6-3 9-7 10v5h-12v-6c-3-1-5-4-5-8z" fill="#d8342c" stroke="#efe8da" stroke-width="2"/>
+  <rect x="-5" y="13" width="10" height="3" fill="#f2c94c"/>
   <path d="M-11 0c2-3 6-3 8 0" stroke="#efe8da" stroke-width="2" fill="none" stroke-linecap="round"/>
 </svg>`;
 
