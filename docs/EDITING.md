@@ -10,11 +10,11 @@ python tools/serve.py        # запуск: http://localhost:8080
 
 | Адрес | Что даёт |
 |---|---|
-| `/?input=puppet` | игра без камеры, управление клавиатурой (F/J — прямые, D/K — хуки, S/L — апперкоты, ←/→ — уклон, ↓ — нырок) |
+| `/?input=puppet` | игра без камеры, управление клавиатурой (F/J - прямые, D/K - хуки, S/L - апперкоты, ←/→ - уклон, ↓ - нырок) |
 | `/?debug` | панель внизу: как распознаются удары, FPS, состояние защиты |
 | `/tests/` | все тесты в браузере (или `node tests/run-node.mjs`) |
 
-После любых правок логики откройте `/tests/` — всё должно быть зелёным.
+После любых правок логики откройте `/tests/` - всё должно быть зелёным.
 
 ## Частые правки: какой файл открыть
 
@@ -22,25 +22,25 @@ python tools/serve.py        # запуск: http://localhost:8080
 |---|---|---|
 | Силу, скорость, защиту бота на уровнях | `src/config.js` → `bot` | `damage`, `interval`, `window`, `defend`… (каждый параметр подписан) |
 | Длину раунда, число раундов, HP | `src/config.js` → `fight` | `roundSeconds`, `rounds`, `maxHp` |
-| Урон и стоимость ударов | `src/game/rules.js` → `PUNCHES` | `base` — урон, `cost` — выносливость |
+| Урон и стоимость ударов | `src/game/rules.js` → `PUNCHES` | `base` - урон, `cost` - выносливость |
 | Что от чего защищает | `src/game/rules.js` → `resolveHit` и таблица в комментарии сверху | |
-| Чувствительность распознавания ударов | `src/config.js` → `punch` | `gate` — минимальный путь кулака, `trigger` — скорость старта |
+| Чувствительность распознавания ударов | `src/config.js` → `punch` | `gate` - минимальный путь кулака, `trigger` - скорость старта |
 | Фразы тренера и все подсказки | `src/strings.js` → `TIPS` | текст по коду ошибки |
 | Надписи интерфейса | `src/strings.js` → `UI` | |
 | Перчатки в магазине (цена, название, описание) | `src/game/shop.js` → `GLOVES` | |
 | Цвет/материал перчатки | `src/render/materials.js` → `gloveMaterialFor` | |
-| Промокоды | `src/game/shop.js` | перчатки — поле `code` в `GLOVES`, деньги — `MONEY_CODES` |
-| Титулы (название, цена, описание) | `src/game/shop.js` → `TITLES` | вид надписи — классы `.title--<id>` в `css/app.css` |
+| Промокоды | `src/game/shop.js` | перчатки - поле `code` в `GLOVES`, деньги - `MONEY_CODES` |
+| Титулы (название, цена, описание) | `src/game/shop.js` → `TITLES` | вид надписи - классы `.title--<id>` в `css/app.css` |
 | Рейтинг: сколько побед на ступень, когда открывается | `src/config.js` → `ranked` | `winsBase`, `winsStep`, `unlockAfter`, `lossStars` |
-| Ранги и какие перчатки за них | `src/game/ranked.js` → `RANKS`, перчатки — `GLOVES` с полем `rank` | вид значка — `.rank--<id>` в `css/app.css` |
-| Трусы (название, цена, описание) | `src/game/shop.js` → `SHORTS` | рисунок — `SHORTS_DRAW` в `src/render/materials.js` (центр картинки — спереди) |
+| Ранги и какие перчатки за них | `src/game/ranked.js` → `RANKS`, перчатки - `GLOVES` с полем `rank` | вид значка - `.rank--<id>` в `css/app.css` |
+| Трусы (название, цена, описание) | `src/game/shop.js` → `SHORTS` | рисунок - `SHORTS_DRAW` в `src/render/materials.js` (центр картинки - спереди) |
 | Награда за онлайн-победу | `src/game/shop.js` → `WIN_REWARD` | |
-| «Свой соперник» (фото лица на манекене, только с ботом) | экран — `src/ui/screens/face.js`, как лицо ложится на голову — `Avatar.setFace` в `src/render/avatar.js` | |
-| Музыка | `src/audio/music.js` | темп `BPM`, ритм — массивы `KICK`, `SNARE`, `HAT` |
+| «Свой соперник» (фото лица на манекене, только с ботом) | экран - `src/ui/screens/face.js`, как лицо ложится на голову - `Avatar.setFace` в `src/render/avatar.js` | |
+| Музыка | `src/audio/music.js` | темп `BPM`, ритм - массивы `KICK`, `SNARE`, `HAT` |
 | Звуки ударов, гонг | `src/audio/sfx.js` | |
 | Цвета, шрифты, вид кнопок | `css/app.css` → блок `:root` в начале | переменные `--red`, `--blue`, `--tape`… |
 | Как выглядит ринг и зал | `src/render/arena.js` | |
-| Как выглядит соперник | `src/render/avatar.js`, позы бота — `src/render/poses.js` | |
+| Как выглядит соперник | `src/render/avatar.js`, позы бота - `src/render/poses.js` | |
 
 ## Как устроен код
 
@@ -58,11 +58,11 @@ python tools/serve.py        # запуск: http://localhost:8080
 | `src/net/` | онлайн: соединение браузеров (`peer.js`), удалённый соперник (`remote.js`) |
 | `src/render/` | 3D на three.js: сцена, ринг, манекен-соперник, перчатки от первого лица, эффекты |
 | `src/ui/` | экраны (`screens/`), HUD боя, превью камеры, курсор-перчатка, настройки |
-| `src/audio/` | звуки, музыка, голос тренера — всё синтезируется, файлов нет |
+| `src/audio/` | звуки, музыка, голос тренера - всё синтезируется, файлов нет |
 | `src/config.js` | **все настраиваемые числа** |
 | `src/strings.js` | **все тексты** |
 
-Каждый экран — отдельный файл в `src/ui/screens/` с методами `enter()` (показать), `frame()` (каждый кадр) и `exit()` (убрать). Переход между экранами — `app.go('имя')`, список экранов — `src/ui/screens/index.js`.
+Каждый экран - отдельный файл в `src/ui/screens/` с методами `enter()` (показать), `frame()` (каждый кадр) и `exit()` (убрать). Переход между экранами - `app.go('имя')`, список экранов - `src/ui/screens/index.js`.
 
 ## Как добавить…
 
