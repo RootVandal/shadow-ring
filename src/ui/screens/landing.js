@@ -16,7 +16,7 @@ export class LandingScreen extends Screen {
         h(
           'div',
           room && h('span.invite', `Тебя позвали на бой · комната ${room}`),
-          h('h1.poster__title', h('span', 'Бой'), h('span.sub', 'с тенью')),
+          h('div.poster__brand', h('img.poster__mark', { src: 'img/mark.svg', alt: '' }), h('h1.poster__title', h('span', 'Бой'), h('span.sub', 'с тенью'))),
           h('div.corner-bars', h('i'), h('i')),
           h('p.poster__tagline', UI.tagline),
           h(
