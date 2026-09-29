@@ -2048,7 +2048,8 @@ p {
   #ui > .screen {
     overflow-y: auto;
     overscroll-behavior: contain;
-    touch-action: pan-y;
+    /* vertical and sideways scroll plus pinch-zoom — only on menu screens, never in a fight (.hud) */
+    touch-action: pan-x pan-y pinch-zoom;
     pointer-events: auto;
   }
 
@@ -2186,6 +2187,71 @@ p {
 .hud--fight .plate:not(.plate--blue) .bar b {
   left: auto;
   right: 0;
+}
+
+/* ─── Shop on a narrow screen ─────────────────────────────────────────── */
+/* Grid items never shrink below their content by default: the tab row and the
+   wallet column stretched the whole shop to ~500px on a 375px phone. */
+.shop-page > *,
+.shop-page > * > * {
+  min-width: 0;
+}
+
+.shop-tabs {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .shop-page .menu__head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .shop-wallet {
+    justify-items: start !important;
+  }
+
+  .shop-wallet .code-input {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .shop-wallet .code-input input {
+    flex: 1 1 140px;
+    width: auto;
+    min-width: 0;
+    font-size: 18px;
+  }
+
+  .shop {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .shop-tab {
+    padding: 7px 12px;
+    font-size: 17px;
+  }
+
+  .glove-card,
+  .title-card {
+    min-width: 0;
+  }
+
+  .glove-card b {
+    font-size: 15px;
+    overflow-wrap: anywhere;
+  }
+
+  .title-card {
+    padding: 12px;
+  }
+
+  .title-card__preview b {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
 }
 
 /* ─── Phone fight: only the webcams, the clock and HP ─────────────────── */

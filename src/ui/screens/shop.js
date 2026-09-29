@@ -163,13 +163,13 @@ export class ShopScreen extends Screen {
       h(
         'section.screen.results',
         h(
-          'div',
+          'div.shop-page',
           { style: { maxWidth: '1180px', width: '100%', margin: '0 auto', display: 'grid', gap: '22px' } },
           h(
             'div.menu__head',
             h('div', h('h1.menu__title', 'Магазин'), h('p.muted', { style: { marginTop: '8px' } }, `${money(WIN_REWARD)} за каждую победу в онлайне. Перчатки видит соперник.`)),
             h(
-              'div',
+              'div.shop-wallet',
               { style: { display: 'grid', gap: '10px', justifyItems: 'end' } },
               this.moneyEl,
               h('div.code-input', this.promo, h('button.btn.btn--small', { onclick: tryCode }, 'Активировать')),
