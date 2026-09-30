@@ -83,9 +83,12 @@ export class SetupScreen extends Screen {
     }
     this.hint.textContent = issue ? TIPS[issue] : 'Отлично, так и стой.';
     this.pip.draw({ video: app.input.video, body: app.tracker.body, dt });
-    if (!issue) {
+    // Dim light is a warning, not a wall: tracking copes with a dark room, and
+    // there's often no brighter one. Everything else (in frame, elbows, fists,
+    // distance) has to be right — the punches are read from exactly that.
+    if (!issue || issue === 'dark') {
       this.okSince ||= now;
-      if (now - this.okSince > 700) app.go('calibrate');
+      if (now - this.okSince > (issue ? 2500 : 700)) app.go('calibrate');
     } else this.okSince = 0;
   }
 }

@@ -8,10 +8,22 @@ import { CONFIG } from '../config.js';
 const ROOT = new URL('../../', import.meta.url);
 const WASM_DIR = new URL('vendor/mediapipe/wasm/', ROOT).href;
 
+// GitHub Pages gzips these files. Then content-length is the compressed size
+// while the stream gives the unpacked bytes, and the progress ran past 100%
+// («12.4 / 11.8 МБ» — looked finished, wasn't). The real sizes of what we ship:
+const SIZES = {
+  'vision_wasm_internal.wasm': 11756954,
+  'vision_wasm_nosimd_internal.wasm': 10960242,
+  'pose_landmarker_lite.task': 5777746,
+  'pose_landmarker_full.task': 9398198,
+};
+
 async function fetchBytes(url, onProgress) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
-  const total = Number(res.headers.get('content-length')) || 0;
+  const name = new URL(url).pathname.split('/').pop();
+  const packed = !!res.headers.get('content-encoding');
+  const total = SIZES[name] ?? (packed ? 0 : Number(res.headers.get('content-length')) || 0);
   if (!res.body || !total) {
     const buf = new Uint8Array(await res.arrayBuffer());
     onProgress?.(buf.length, buf.length);
@@ -25,7 +37,7 @@ async function fetchBytes(url, onProgress) {
     if (done) break;
     chunks.push(value);
     got += value.length;
-    onProgress?.(got, total);
+    onProgress?.(Math.min(got, total), total);
   }
   const out = new Uint8Array(got);
   let o = 0;
