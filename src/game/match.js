@@ -119,6 +119,7 @@ export class Match extends Emitter {
     if (this.rules.oneHit) {
       attack.power = this.rules.maxHp * 4;
       attack.onehit = true;
+      if (this.rules.sonic) attack.sonic = true;
     }
     this.pending.set(attack.id, { attack, at: now });
     this.link.sendAttack(attack, now);

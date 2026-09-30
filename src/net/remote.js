@@ -69,6 +69,7 @@ function sanitizeAttack(a) {
     power: a.onehit === true ? 400 : clamp(Number(a.power) || 0, 0, 16),
     zone: a.zone === 'body' ? 'body' : 'head',
     window: clamp(Number(a.window) || 700, 450, 900),
+    sonic: a.sonic === true && a.onehit === true,
   };
 }
 
@@ -125,7 +126,7 @@ export class RemoteLink extends Emitter {
   }
 
   sendAttack(a) {
-    this.wire.send('atk', { a: { id: a.id, kind: a.kind, side: a.side, quality: a.quality, power: a.power, window: a.window, zone: a.zone, onehit: a.onehit === true } });
+    this.wire.send('atk', { a: { id: a.id, kind: a.kind, side: a.side, quality: a.quality, power: a.power, window: a.window, zone: a.zone, onehit: a.onehit === true, sonic: a.sonic === true } });
   }
 
   sendResult(r) {

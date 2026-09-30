@@ -321,6 +321,30 @@ export function shortsMaterialFor(id, corner) {
   return new THREE.MeshStandardMaterial({ map: shortsTex(`shorts-${id}`, draw), roughness: id === 'supreme' ? 0.35 : 0.6 });
 }
 
+/** SONIC SPEED: синие молнии на тёмном. glow=true — только молнии (для свечения). */
+const boltTexture = (glow) =>
+  canvasTex(glow ? 'bolt-glow' : 'bolt', (g) => {
+    g.fillStyle = glow ? '#000' : '#071a3a';
+    g.fillRect(0, 0, 256, 256);
+    const rnd = seeded(21);
+    for (let i = 0; i < 9; i++) {
+      let x = rnd() * 256;
+      let y = -10;
+      g.strokeStyle = i % 3 ? '#39b6ff' : '#bff1ff';
+      g.lineWidth = i % 3 ? 3 : 5;
+      g.shadowColor = '#4fd0ff';
+      g.shadowBlur = glow ? 14 : 6;
+      g.beginPath();
+      g.moveTo(x, y);
+      while (y < 266) {
+        x += (rnd() - 0.5) * 50;
+        y += 14 + rnd() * 22;
+        g.lineTo(x, y);
+      }
+      g.stroke();
+    }
+  }, [2, 1]);
+
 /** Shop gloves (game/shop.js); 'classic' takes the corner's color. */
 export function gloveMaterialFor(id, corner) {
   const phys = (o) => new THREE.MeshPhysicalMaterial({ roughness: 0.34, clearcoat: 0.7, clearcoatRoughness: 0.3, ...o });
@@ -341,6 +365,8 @@ export function gloveMaterialFor(id, corner) {
       m.emissive = new THREE.Color(0x330300);
       return m;
     }
+    case 'sonic':
+      return phys({ map: boltTexture(false), emissive: 0xffffff, emissiveMap: boltTexture(true), emissiveIntensity: 1, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.05 });
     // Перчатки за рейтинг (game/ranked.js).
     case 'r-silver':
       return phys({ color: 0xd6dbe2, metalness: 0.5, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.08 });

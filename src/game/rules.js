@@ -66,6 +66,8 @@ export function attackPower({ kind, quality, tired = false, counter = false }) {
  */
 export function resolveHit(attack, def) {
   const { kind, power, quality = 0.8 } = attack;
+  // SONIC SPEED: сотня ударов подряд — ни уклон, ни нырок, ни блок не спасают.
+  if (attack.sonic) return { outcome: 'crit', damage: power, lesson: null };
   const g = group(kind);
   if (attack.zone === 'body' && g !== 'upper') {
     const damage = power * BODY.power * BODY.guard[def.guard];

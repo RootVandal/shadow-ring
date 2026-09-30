@@ -16,11 +16,12 @@ const TRAIL = 3;
 /** Color of a punch in flight, by the thrower's shop gloves. */
 const GLOVE_COLOR = {
   violet: 0x6c2bd9, gold: 0xd9a92c, polka: 0xc92a24, legend: 0xf2c94c, onehit: 0xff3b1f,
+  sonic: 0x3fb0ff,
   'r-silver': 0xd6dbe2, 'r-gold': 0xffc62e, 'r-plat': 0xd7e2e0, 'r-diamond': 0x8fdcff, 'r-legend': 0xff8a1a, 'r-impossible': 0x8a4dff,
 };
 
 /** Перчатки с особым эффектом удара: цвет ударной волны. «Легенда» — золото, ранговые — свой цвет. */
-const EFFECT_COLOR = { legend: 0xf2c94c, 'r-plat': 0xeafcff, 'r-diamond': 0x6fdcff, 'r-legend': 0xff7a1a, 'r-impossible': 0xb46bff };
+const EFFECT_COLOR = { sonic: 0x5ad1ff, legend: 0xf2c94c, 'r-plat': 0xeafcff, 'r-diamond': 0x6fdcff, 'r-legend': 0xff7a1a, 'r-impossible': 0xb46bff };
 
 function ringTexture() {
   const c = document.createElement('canvas');
@@ -137,6 +138,78 @@ export class Fx {
     return this.sparkMats.get(color);
   }
 
+  /**
+   * SONIC SPEED: сотня маленьких синих кулаков летит в голову и корпус соперника
+   * за время одного удара, вокруг трещат молнии, в точках попадания — вспышки.
+   */
+  barrage({ from, foe, start, end, count = 100 }) {
+    this.boltMat ??= new THREE.LineBasicMaterial({ color: 0x7fe0ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    this.fistMat ??= new THREE.MeshBasicMaterial({ color: 0x5ac8ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+    this.barrages ??= [];
+    const shots = [];
+    const span = Math.max(200, end - start);
+    for (let i = 0; i < count; i++) {
+      const t0 = start + (i / count) * span * 0.85;
+      const target = (Math.random() < 0.6 ? foe.head : foe.body).clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.28, (Math.random() - 0.5) * 0.28, (Math.random() - 0.5) * 0.1));
+      shots.push({ t0, t1: t0 + 90 + Math.random() * 40, from: from[i % 2].clone(), to: target, mesh: null, hit: false });
+    }
+    this.barrages.push({ shots, start, end: end + 200, foe, bolts: [] });
+  }
+
+  #updateBarrages(now) {
+    if (!this.barrages?.length) return;
+    this.fistGeo ??= new THREE.SphereGeometry(0.035, 8, 6);
+    for (let b = this.barrages.length - 1; b >= 0; b--) {
+      const br = this.barrages[b];
+      for (const s of br.shots) {
+        if (now < s.t0) continue;
+        const u = (now - s.t0) / (s.t1 - s.t0);
+        if (u >= 1) {
+          if (s.mesh) {
+            this.scene.remove(s.mesh);
+            s.mesh = null;
+          }
+          if (!s.hit) {
+            s.hit = true;
+            if (Math.random() < 0.35) this.burst(s.to, { scale: 0.18, now, tint: 0x6fd6ff });
+          }
+          continue;
+        }
+        if (!s.mesh) {
+          s.mesh = new THREE.Mesh(this.fistGeo, this.fistMat);
+          s.mesh.scale.z = 1.6;
+          this.scene.add(s.mesh);
+        }
+        s.mesh.position.lerpVectors(s.from, s.to, u * u);
+        s.mesh.lookAt(s.to);
+      }
+      // Молнии вокруг соперника: каждые пару кадров — новые зигзаги.
+      for (const l of br.bolts) {
+        this.scene.remove(l);
+        l.geometry.dispose();
+      }
+      br.bolts = [];
+      if (now < br.end) {
+        for (let k = 0; k < 4; k++) {
+          const c = (Math.random() < 0.5 ? br.foe.head : br.foe.body).clone();
+          const pts = [];
+          let p = c.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.6, 0.35, (Math.random() - 0.5) * 0.3));
+          for (let j = 0; j < 7; j++) {
+            pts.push(p.clone());
+            p = p.lerp(c, 0.35).add(new THREE.Vector3((Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.06));
+          }
+          const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), this.boltMat);
+          this.scene.add(line);
+          br.bolts.push(line);
+        }
+        this.shake = Math.max(this.shake, 0.12);
+      } else {
+        for (const s of br.shots) if (s.mesh) this.scene.remove(s.mesh);
+        this.barrages.splice(b, 1);
+      }
+    }
+  }
+
   /** Something hit the player: camera shake and a red edge flash. */
   hurt(amount) {
     this.shake = Math.max(this.shake, clamp(amount, 0, 1));
@@ -162,6 +235,7 @@ export class Fx {
   }
 
   update(now, dt) {
+    this.#updateBarrages(now);
     this.shake *= Math.exp(-dt / 0.12);
     this.redFlash *= Math.exp(-dt / 0.25);
 

@@ -49,6 +49,16 @@ export const GLOVES = [
     effect: 'onehit',
     desc: 'Перчатки разработчика. Любой удар, который дошёл до цели, — нокаут. От уклона и нырка всё равно можно уйти. Бои в них не идут в рекорды и не приносят денег.',
   },
+  // SONIC SPEED: скрытые, по коду (с пробелом или без). Один удар — очередь из сотни
+  // ударов-молний, от которой не уйти: нокаут в раунде. Как и «Ваншот» — без денег и рекордов.
+  {
+    id: 'sonic',
+    name: 'SONIC SPEED',
+    codeHash: 'd1a36dea',
+    hidden: true,
+    effect: 'sonic',
+    desc: 'Синие молнии вместо кожи. Один удар — и сотня ударов за секунду: от такой очереди не уклониться. Бои в них не идут в рекорды и не приносят денег.',
+  },
   // Перчатки за рейтинг (game/ranked.js): не продаются, выдаются при входе в ранг.
   // С Платины — узорная текстура и свой эффект удара (effect: 'rank').
   { id: 'r-silver', name: 'Серебряный ранг', rank: 'Серебро', desc: 'Полированное серебро. Выдаются за выход в Серебро в рейтинговых матчах.' },
@@ -119,7 +129,10 @@ export function wearShorts(id) {
 export const titleById = (id) => TITLES.find((t) => t.id === id) ?? null;
 
 /** Бьёт ли надетая перчатка с одного удара. */
-export const isOneHit = (id) => gloveById(id).effect === 'onehit';
+export const isOneHit = (id) => ['onehit', 'sonic'].includes(gloveById(id).effect);
+
+/** SONIC SPEED: вместо одного удара — очередь-молния (render/fx.js → barrage). */
+export const isSonic = (id) => gloveById(id).effect === 'sonic';
 
 /** Короткий хэш строки (FNV-1a) — для скрытых кодов. */
 export function hashCode(s) {
@@ -198,7 +211,8 @@ export function redeem(code) {
     save('wallet', w);
     return { money: MONEY_CODES[c] };
   }
-  const g = GLOVES.find((x) => (x.code && x.code === c) || (x.codeHash && x.codeHash === hashCode(c)));
+  const compact = c.replace(/\s+/g, ''); // «SONIC SPEED» и «SONICSPEED» — один код
+  const g = GLOVES.find((x) => (x.code && x.code === c) || (x.codeHash && (x.codeHash === hashCode(c) || x.codeHash === hashCode(compact))));
   if (!g) return null;
   const w = read();
   if (!w.owned.includes(g.id)) w.owned.push(g.id);

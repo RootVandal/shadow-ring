@@ -11,7 +11,7 @@ import { COUNTER, isLanded } from '../../game/rules.js';
 import { PoseAnimator } from '../../render/animator.js';
 import { KIND, DEFENSE_WORD, TIPS } from '../../strings.js';
 import { CONFIG } from '../../config.js';
-import { wallet, isOneHit } from '../../game/shop.js';
+import { wallet, isOneHit, isSonic } from '../../game/shop.js';
 import { ranked, unlocked } from '../../game/ranked.js';
 
 const other = (side) => (side === 'left' ? 'right' : 'left');
@@ -69,6 +69,7 @@ export class FightScreen extends Screen {
       rules: {
         ...(this.online ? { ...CONFIG.fight, ...CONFIG.onlineFight } : { ...CONFIG.fight, breakSeconds: 3, roundKo: true, resetHp: true }),
         oneHit: isOneHit(this.myGlove),
+        sonic: isSonic(this.myGlove),
       },
     });
     this.match = m;
@@ -240,6 +241,11 @@ export class FightScreen extends Screen {
       glove: this.myGlove,
       hookSide: attack.side === 'left' ? -1 : 1,
     });
+    // SONIC SPEED: очередь из сотни ударов-молний по сопернику до попадания главного.
+    if (attack.sonic) {
+      app.stage.fx.barrage({ from: [app.stage.gloveWorld('left'), app.stage.gloveWorld('right')], foe: app.stage.foe.world, start: now, end: now + flight + 350 });
+      for (let i = 0; i < 14; i++) this.later((i * (flight + 300)) / 14, () => app.sfx.hit(0.25));
+    }
   }
 
   #landed({ attack, outcome, damage }) {

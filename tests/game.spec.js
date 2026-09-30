@@ -473,3 +473,18 @@ test('shop: six shorts, prices differ, an unknown id from the opponent falls bac
   assert.equal(shortsById('<img>').id, 'classic');
   assert.equal(shortsById(undefined).id, 'classic');
 });
+
+test('shop: SONIC SPEED is hidden, opens by its code with or without the space, and nothing escapes it', () => {
+  const g = GLOVES.find((x) => x.id === 'sonic');
+  assert.ok(g.hidden);
+  assert.equal(g.code, undefined);
+  assert.equal(hashCode('SONICSPEED'), g.codeHash);
+  const r = redeem('sonic speed');
+  assert.equal(r?.id, 'sonic');
+  assert.equal(redeem('SONICSPEED')?.id, 'sonic');
+  for (const def of [OPEN, FULL, SLIP, DUCK]) {
+    const res = resolveHit({ kind: 'jab', power: 400, sonic: true }, def);
+    assert.equal(res.outcome, 'crit');
+    assert.equal(res.damage, 400);
+  }
+});
