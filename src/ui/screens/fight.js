@@ -291,6 +291,11 @@ export class FightScreen extends Screen {
       hookSide: attack.side === 'left' ? 1 : -1,
     });
     this.hud.showTelegraph(attack, now, impactAt, this.showHints ? DEFENSE_WORD[COUNTER[attack.kind]] : null);
+    // Соперник в SONIC SPEED: сотня кулаков-молний летит тебе в лицо и корпус.
+    if (attack.sonic) {
+      app.stage.fx.barrage({ from: [foe.world.lGlove.clone(), foe.world.rGlove.clone()], foe: { head: app.stage.headAim, body: app.stage.bodyAim }, start: now, end: impactAt + 250, spread: 0.55 });
+      for (let i = 0; i < 12; i++) this.later((i * (impactAt - now + 250)) / 12, () => app.sfx.hit(0.3));
+    }
   }
 
   #defended({ attack, outcome, damage, lesson }) {

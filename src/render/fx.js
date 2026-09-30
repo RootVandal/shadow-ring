@@ -142,7 +142,7 @@ export class Fx {
    * SONIC SPEED: сотня маленьких синих кулаков летит в голову и корпус соперника
    * за время одного удара, вокруг трещат молнии, в точках попадания — вспышки.
    */
-  barrage({ from, foe, start, end, count = 100 }) {
+  barrage({ from, foe, start, end, count = 100, spread = 1 }) {
     this.boltMat ??= new THREE.LineBasicMaterial({ color: 0x7fe0ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
     this.fistMat ??= new THREE.MeshBasicMaterial({ color: 0x5ac8ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
     this.barrages ??= [];
@@ -150,10 +150,10 @@ export class Fx {
     const span = Math.max(200, end - start);
     for (let i = 0; i < count; i++) {
       const t0 = start + (i / count) * span * 0.85;
-      const target = (Math.random() < 0.6 ? foe.head : foe.body).clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.28, (Math.random() - 0.5) * 0.28, (Math.random() - 0.5) * 0.1));
+      const target = (Math.random() < 0.6 ? foe.head : foe.body).clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.28 * spread, (Math.random() - 0.5) * 0.28 * spread, (Math.random() - 0.5) * 0.1));
       shots.push({ t0, t1: t0 + 90 + Math.random() * 40, from: from[i % 2].clone(), to: target, mesh: null, hit: false });
     }
-    this.barrages.push({ shots, start, end: end + 200, foe, bolts: [] });
+    this.barrages.push({ shots, start, end: end + 200, foe, bolts: [], spread });
   }
 
   #updateBarrages(now) {
@@ -193,7 +193,8 @@ export class Fx {
         for (let k = 0; k < 4; k++) {
           const c = (Math.random() < 0.5 ? br.foe.head : br.foe.body).clone();
           const pts = [];
-          let p = c.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.6, 0.35, (Math.random() - 0.5) * 0.3));
+          const k2 = br.spread;
+          let p = c.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.6 * k2, 0.35 * k2, (Math.random() - 0.5) * 0.3 * k2));
           for (let j = 0; j < 7; j++) {
             pts.push(p.clone());
             p = p.lerp(c, 0.35).add(new THREE.Vector3((Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.12, (Math.random() - 0.5) * 0.06));
