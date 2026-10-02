@@ -13,6 +13,7 @@ import { KIND, DEFENSE_WORD, TIPS } from '../../strings.js';
 import { CONFIG } from '../../config.js';
 import { wallet, isOneHit, isSonic } from '../../game/shop.js';
 import { ranked, unlocked } from '../../game/ranked.js';
+import { GhostLink, GhostRecorder, loadGhost } from '../../game/ghost.js';
 
 const other = (side) => (side === 'left' ? 'right' : 'left');
 
@@ -26,6 +27,8 @@ export class FightScreen extends Screen {
   enter() {
     const { app, params } = this;
     this.online = params.mode === 'online';
+    // «Твоя тень»: соперник — запись тебя самого из прошлого боя (game/ghost.js).
+    this.ghostTape = params.mode === 'ghost' ? loadGhost() : null;
     app.stage.setMode('fight');
     app.stage.fx.clear();
     app.cursor.setEnabled(false);
@@ -35,7 +38,7 @@ export class FightScreen extends Screen {
     app.music.setLevel(0.15);
 
     this.me = new Fighter({ name: app.settings.name, corner: 'red' });
-    this.foe = new Fighter({ name: this.online ? params.foeName : params.foeName ?? 'Тень', corner: 'blue' });
+    this.foe = new Fighter({ name: this.online ? params.foeName : this.ghostTape ? 'Твоя тень' : params.foeName ?? 'Тень', corner: 'blue' });
     this.koAnim = null;
     // Титулы над никами на плашках (у Тени титула нет).
     this.me.title = wallet().title;
@@ -44,14 +47,17 @@ export class FightScreen extends Screen {
     this.me.rank = unlocked() ? ranked().step : null;
     this.foe.rank = this.online ? params.foeRank ?? null : null;
     this.myGlove = wallet().equipped;
-    this.foeGlove = this.online ? params.foeGlove ?? 'classic' : 'classic';
+    this.foeGlove = this.online ? params.foeGlove ?? 'classic' : this.ghostTape?.glove ?? 'classic';
     app.stage.gloves.setGlove(this.myGlove);
     app.stage.foe.setGlove(this.foeGlove);
-    app.stage.foe.setShorts(this.online ? params.foeShorts ?? 'classic' : 'classic');
+    app.stage.foe.setShorts(this.online ? params.foeShorts ?? 'classic' : this.ghostTape?.shorts ?? 'classic');
     // «Свой соперник» (ui/screens/face.js): фото лица на манекене — только с ботом.
     app.stage.foe.setFace(this.online ? null : params.face ?? null);
     if (this.online) {
       this.link = params.link;
+      app.foeDriver = (now, dt) => (this.koAnim ? this.koAnim.update(dt) : this.link.poseAt(now));
+    } else if (this.ghostTape) {
+      this.link = new GhostLink({ tape: this.ghostTape });
       app.foeDriver = (now, dt) => (this.koAnim ? this.koAnim.update(dt) : this.link.poseAt(now));
     } else {
       this.foeAnim = new PoseAnimator();
@@ -74,6 +80,8 @@ export class FightScreen extends Screen {
     });
     this.match = m;
     this.stats = new MatchStats();
+    // Пишем этот бой: в следующий раз с ним можно будет драться как с тенью.
+    this.rec = isOneHit(this.myGlove) ? null : new GhostRecorder({ name: app.settings.name, glove: this.myGlove, shorts: wallet().shorts });
     this.hud = new Hud({ me: this.me, foe: this.foe, online: this.online });
     this.hud.el.classList.add('hud--fight'); // на телефоне в бою — только камеры, таймер и HP (css/app.css)
     this.pip = new Pip({ label: 'ты' });
@@ -123,6 +131,7 @@ export class FightScreen extends Screen {
     this.hud.update(now, { match: m, defense: def, redFlash: app.stage.fx.redFlash, rtt: this.online ? this.link.rtt : null });
     if (m.phase === 'break') this.hud.updateCorner(now);
     this.pip.draw({ video: app.input?.video, body, hands: app.tracker.hands, focus, dt });
+    this.rec?.frame(m, now, dt, app.tracker.lastFrame, def);
 
     if (this.online && m.phase !== 'over') {
       this.poseIn -= dt;
@@ -228,6 +237,7 @@ export class FightScreen extends Screen {
     this.stats.thrown(attack);
     app.sfx.whoosh();
     const now = performance.now();
+    this.rec?.punch(this.match, attack, now);
     const flight = this.online ? attack.window + (this.link.rtt ?? 80) / 2 : CONFIG.fight.myProjectileMs;
     const foe = app.stage.foe.world;
     app.stage.fx.launch({
@@ -298,9 +308,10 @@ export class FightScreen extends Screen {
     }
   }
 
-  #defended({ attack, outcome, damage, lesson }) {
+  #defended({ attack, outcome, damage, lesson, def }) {
     const { app, hud } = this;
     const now = performance.now();
+    this.rec?.defense(def);
     this.stats.defended({ outcome, damage, lesson });
     app.stage.fx.resolve(`i${attack.id}`, outcome, now);
     hud.resolveTelegraph(attack.id, outcome);
@@ -389,7 +400,7 @@ export class FightScreen extends Screen {
     hud.callout(title, small, 0);
     app.voice.say(title.replace('!', ''), { interrupt: true });
     // Online the fight can end on a KO in the last round even though it's decided by rounds.
-    if (this.online && win && (result.method === 'ko' || this.foe.hp <= 0)) {
+    if ((this.online || this.ghostTape) && win && (result.method === 'ko' || this.foe.hp <= 0)) {
       this.koAnim = new PoseAnimator();
       this.koAnim.knockout();
     }
@@ -419,6 +430,7 @@ export class FightScreen extends Screen {
       link: this.online ? this.link : null,
       role: this.params.role,
       oneHit: match.rules.oneHit,
+      ghostSaved: this.rec?.save() ?? false,
     };
     this.later(3400, () => app.go('results', payload));
   }

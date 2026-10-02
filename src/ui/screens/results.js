@@ -8,6 +8,7 @@ import { KIND } from '../../strings.js';
 import { earn, WIN_REWARD, gloveById, grant } from '../../game/shop.js';
 import { countQuick, applyResult, rankOf, winsToNext, TOP } from '../../game/ranked.js';
 import { rankBadge } from '../rank.js';
+import { isNewbie } from '../../game/progress.js';
 
 const pct = (x) => (x == null ? '—' : `${Math.round(x * 100)}%`);
 
@@ -30,7 +31,8 @@ export class ResultsScreen extends Screen {
     app.foeDriver = (now, dt) => pose.update(dt);
     if (params.face) app.stage.foe.setFace(params.face); // лежит с тем же лицом
 
-    const modeKey = mode === 'online' ? 'online' : `bot:${level}`;
+    const modeKey = mode === 'online' ? 'online' : mode === 'ghost' ? 'ghost' : `bot:${level}`;
+    const firstFight = !oneHit && isNewbie(); // до записи: это первый бой — покажем, что открылось
     const outcome = { ...result, secondsLeft };
     const score = scoreOf(report, outcome, modeKey);
     const win = result.winner === 'me';
@@ -88,6 +90,7 @@ export class ResultsScreen extends Screen {
             h('p.verdict__how', how),
             purse && h('p.reward', `+$${reward} · на счету $${purse.money.toLocaleString('ru-RU')}`),
             rk && this.#rankBlock(rk),
+            firstFight ? h('p.unlock', 'Открыто: рекорды, магазин и бой со своей тенью. Всё это теперь в меню.') : null,
             h(
               'div.score',
               h('div.grade', v.grade),
@@ -99,6 +102,7 @@ export class ResultsScreen extends Screen {
               tile({ title: 'Реванш', num: 'ещё раз', accent: '.tile--tape', onclick: () => this.#rematch() }),
               tile({ title: 'Меню', num: 'выход', onclick: () => this.#leave('menu') }),
               tile({ title: 'Рекорды', num: 'прогресс', accent: '.tile--blue', onclick: () => this.#leave('records') }),
+              params.ghostSaved && mode !== 'ghost' ? tile({ title: 'Твоя тень', num: 'бой с собой', accent: '.tile--blue', onclick: () => app.go('fight', { mode: 'ghost' }) }) : null,
             ),
           ),
           h(
@@ -163,6 +167,10 @@ export class ResultsScreen extends Screen {
 
   #rematch() {
     const { app, params } = this;
+    if (params.mode === 'ghost') {
+      app.go('fight', { mode: 'ghost' });
+      return;
+    }
     if (params.mode !== 'online') {
       app.go('fight', { mode: 'bot', level: params.level, face: params.face, foeName: params.face ? params.foeName : undefined });
       return;

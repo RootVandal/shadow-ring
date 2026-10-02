@@ -1,8 +1,9 @@
 import { Screen } from '../screen.js';
+import { markSeen } from '../../game/progress.js';
 import { h } from '../../util/dom.js';
 import { history, leaderboard, bests } from '../../game/records.js';
 
-const MODE = { 'bot:easy': 'Тень · лёгкий', 'bot:normal': 'Тень · средний', 'bot:hard': 'Тень · жёсткий', online: 'онлайн' };
+const MODE = { 'bot:easy': 'Тень · лёгкий', 'bot:normal': 'Тень · средний', 'bot:hard': 'Тень · жёсткий', online: 'онлайн', ghost: 'своя тень' };
 const RESULT = { win: 'победа', loss: 'поражение', draw: 'ничья' };
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -58,6 +59,7 @@ export class RecordsScreen extends Screen {
 
   enter() {
     const { app } = this;
+    markSeen('records');
     app.stage.setMode('showcase');
     app.cursor.setEnabled(true);
     const all = history();

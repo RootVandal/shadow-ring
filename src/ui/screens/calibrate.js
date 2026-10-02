@@ -2,6 +2,7 @@ import { Screen } from '../screen.js';
 import { Pip } from '../pip.js';
 import { h } from '../../util/dom.js';
 import { TIPS, TIP_FOCUS, UI } from '../../strings.js';
+import { shouldOfferTutorial, markProgress } from '../../game/progress.js';
 
 const RING = 2 * Math.PI * 38;
 
@@ -41,7 +42,10 @@ export class CalibrateScreen extends Screen {
       this.later(900, () => {
         const room = this.app.pendingRoom;
         if (room) this.app.go('lobby', { join: room });
-        else this.app.go('menu');
+        else if (shouldOfferTutorial()) {
+          markProgress({ offered: true });
+          this.app.go('tutorial', { first: true });
+        } else this.app.go('menu');
       });
     }
   }

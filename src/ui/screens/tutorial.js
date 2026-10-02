@@ -7,6 +7,7 @@ import { PoseAnimator } from '../../render/animator.js';
 import { resolveHit, isMiss, COUNTER } from '../../game/rules.js';
 import { guardIssue } from '../../motion/posture.js';
 import { KIND, DEFENSE_WORD } from '../../strings.js';
+import { markProgress } from '../../game/progress.js';
 
 // The warm-up doubles as the error mode's showcase: every move is demonstrated
 // by the Shadow, repeated by the player, and every wrong attempt gets a specific
@@ -264,6 +265,7 @@ export class TutorialScreen extends Screen {
 
   #finish() {
     const { app } = this;
+    markProgress({ tutorial: true });
     app.stage.setMode('showcase');
     this.anim.celebrate();
     this.card.replaceChildren(

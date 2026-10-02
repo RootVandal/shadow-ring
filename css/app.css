@@ -228,6 +228,44 @@ p {
   --accent: var(--tape);
 }
 
+.tile--locked {
+  opacity: 0.55;
+}
+
+/* «старт» / «новое» на плитке: раздел только что открылся */
+.tile__new {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 4px 8px;
+  background: var(--tape);
+  color: var(--ink);
+  font: 700 11px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  animation: tile-new 1.6s ease-in-out infinite;
+}
+
+@keyframes tile-new {
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.menu__note {
+  max-width: 62ch;
+  color: var(--bone-2);
+  font-size: 15px;
+}
+
+.unlock {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--tape);
+  background: rgba(23, 21, 19, 0.86);
+  font-size: 15px;
+}
+
 /* ─── Hand cursor ─────────────────────────────────────────────────────── */
 
 .hand-cursor {

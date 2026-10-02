@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Screen } from '../screen.js';
+import { markSeen } from '../../game/progress.js';
 import { h, clear } from '../../util/dom.js';
 import { GLOVES, gloveById, wallet, buy, equip, redeem, WIN_REWARD, TITLES, buyTitle, wearTitle, SHORTS, buyShorts, wearShorts } from '../../game/shop.js';
 import { titleTag } from '../title.js';
@@ -115,6 +116,7 @@ export class ShopScreen extends Screen {
 
   enter() {
     const { app } = this;
+    markSeen('shop');
     app.stage.setMode('showcase');
     app.cursor.setEnabled(true);
     this.preview = glovePreview();

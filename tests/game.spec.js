@@ -11,6 +11,8 @@ import { CONFIG } from '../src/config.js';
 import { GLOVES, hashCode, TITLES, titleById, gloveById, buy, redeem, SHORTS, shortsById } from '../src/game/shop.js';
 import { rankOf, winsToNext, nextState, TOP, RANKS } from '../src/game/ranked.js';
 import { voiceScore } from '../src/audio/voice.js';
+import { GhostLink } from '../src/game/ghost.js';
+import { JOINT_NAMES } from '../src/vision/landmarks.js';
 
 const OPEN = { guard: 'open', slip: false, duck: false };
 const FULL = { guard: 'full', slip: false, duck: false };
@@ -487,4 +489,49 @@ test('shop: SONIC SPEED is hidden, opens by its code with or without the space, 
     assert.equal(res.outcome, 'crit');
     assert.equal(res.damage, 400);
   }
+});
+
+test('ghost: your shadow throws your punches on your clock and defends like you did', () => {
+  const N = JOINT_NAMES.length * 3;
+  const row = (t, x) => [t, ...Array.from({ length: N }, () => x), 0, 0];
+  const tape = {
+    v: 1,
+    name: 'Я',
+    glove: 'classic',
+    rounds: [{ len: 10000, poses: [row(0, 0), row(1000, 100)], punches: [{ t: 2000, kind: 'jab', side: 'left', zone: 'head', quality: 0.9, power: 8, window: 600 }, { t: 6000, kind: 'hook', side: 'right', zone: 'head', quality: 0.8, power: 10, window: 650 }] }],
+    defense: { none: 0, guard: 0, slip: 0, duck: 1000 },
+  };
+  const me = new Fighter({ name: 'Я', corner: 'red' });
+  const foe = new Fighter({ name: 'Твоя тень', corner: 'blue' });
+  const link = new GhostLink({ tape, rnd: mulberry32(3) });
+  const m = new Match({ me, foe, link, defense: () => FULL });
+  const seen = [];
+  m.on('incoming', ({ attack, windowMs }) => seen.push([Math.round(m.rules.roundSeconds * 1000 - m.timeLeft(now)), attack.kind, windowMs]));
+  m.start(0);
+  let now = 0;
+  const run = (ms) => {
+    for (let t = 0; t < ms; t += 16) {
+      now += 16;
+      m.update(now, 0.016);
+    }
+  };
+  run(CONFIG.fight.introSeconds * 1000 + 50);
+  assert.equal(m.phase, 'round');
+  // Поза — из записи, между кадрами плавно.
+  run(500);
+  const p = link.poseAt(now).joints[JOINT_NAMES[0]].x;
+  assert.ok(p > 0.3 && p < 0.7, `interpolated x ${p}`);
+  run(21000);
+  // Запись 10 с, раунд дольше: удары идут по кругу — 2 с, 6 с, 12 с, 16 с, …
+  assert.equal(seen.slice(0, 4).map((s) => s[1]).join(), 'jab,hook,jab,hook');
+  for (const [t, , w] of seen.slice(0, 4)) assert.ok([2000, 6000, 12000, 16000].some((x) => Math.abs(t - x) < 40), `at ${t}`);
+  assert.equal(seen[0][2], 600);
+  // Ты всегда нырял — тень тоже ныряет: прямой проходит мимо, апперкот — крит.
+  const results = [];
+  m.on('landed', (x) => results.push(x.outcome));
+  m.throwPunch({ kind: 'jab', side: 'left', quality: 0.9 }, now);
+  run(600);
+  m.throwPunch({ kind: 'upper', side: 'right', quality: 0.9 }, now);
+  run(600);
+  assert.equal(results.join(), 'ducked,crit');
 });
