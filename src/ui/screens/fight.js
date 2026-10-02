@@ -14,6 +14,7 @@ import { CONFIG } from '../../config.js';
 import { wallet, isOneHit, isSonic } from '../../game/shop.js';
 import { ranked, unlocked } from '../../game/ranked.js';
 import { GhostLink, GhostRecorder, loadGhost } from '../../game/ghost.js';
+import { packPose } from '../../net/remote.js';
 
 const other = (side) => (side === 'left' ? 'right' : 'left');
 
@@ -82,6 +83,9 @@ export class FightScreen extends Screen {
     this.stats = new MatchStats();
     // Пишем этот бой: в следующий раз с ним можно будет драться как с тенью.
     this.rec = isOneHit(this.myGlove) ? null : new GhostRecorder({ name: app.settings.name, glove: this.myGlove, shorts: wallet().shorts });
+    // Последние ~1,3 с скелета на полной частоте камеры: из них — повтор лучшего удара (ui/replay.js).
+    this.clip = [];
+    this.best = null;
     this.hud = new Hud({ me: this.me, foe: this.foe, online: this.online });
     this.hud.el.classList.add('hud--fight'); // на телефоне в бою — только камеры, таймер и HP (css/app.css)
     this.pip = new Pip({ label: 'ты' });
@@ -132,6 +136,13 @@ export class FightScreen extends Screen {
     if (m.phase === 'break') this.hud.updateCorner(now);
     this.pip.draw({ video: app.input?.video, body, hands: app.tracker.hands, focus, dt });
     this.rec?.frame(m, now, dt, app.tracker.lastFrame, def);
+    const lf = app.tracker.lastFrame;
+    if (lf && lf !== this.clipFrame) {
+      this.clipFrame = lf;
+      const pk = packPose(lf);
+      if (pk) this.clip.push({ at: now, j: pk.j });
+      while (this.clip.length && now - this.clip[0].at > 1300) this.clip.shift();
+    }
 
     if (this.online && m.phase !== 'over') {
       this.poseIn -= dt;
@@ -218,6 +229,7 @@ export class FightScreen extends Screen {
     const attack = this.match.throwPunch(ev, now);
     if (!attack) return;
     this.stats.punch(ev);
+    if (!this.best || ev.quality > this.best.quality) this.later(350, () => this.#keepBest(ev, now));
     app.stage.gloves.punch(ev.side);
     this.pip.punch(ev.side);
     const worst = ev.faults[0];
@@ -230,6 +242,14 @@ export class FightScreen extends Screen {
     else if (ev.quality >= 0.92 && Math.random() < 0.3) {
       app.coach.tip('clean', { kind: 'praise', now, params: { kind: KIND[ev.kind], q: Math.round(ev.quality * 100) } });
     }
+  }
+
+  /** Лучший по технике удар боя: кадры за 0,7 с до него и 0,35 с после. */
+  #keepBest(ev, at) {
+    if (this.best && ev.quality <= this.best.quality) return;
+    const frames = this.clip.filter((f) => f.at >= at - 700).map((f) => ({ t: Math.round(f.at - at), j: f.j }));
+    if (frames.length < 6) return;
+    this.best = { kind: ev.kind, side: ev.side, quality: ev.quality, ms: Math.round(ev.ms ?? 0), frames };
   }
 
   #outgoing(attack) {
@@ -431,6 +451,7 @@ export class FightScreen extends Screen {
       role: this.params.role,
       oneHit: match.rules.oneHit,
       ghostSaved: this.rec?.save() ?? false,
+      best: this.best,
     };
     this.later(3400, () => app.go('results', payload));
   }

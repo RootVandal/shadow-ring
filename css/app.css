@@ -258,6 +258,48 @@ p {
   font-size: 15px;
 }
 
+/* «Лучший удар боя» на итогах (ui/replay.js) */
+.replay {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 14px;
+  border: 2px solid var(--line);
+  background: rgba(23, 21, 19, 0.86);
+}
+
+.replay__canvas {
+  width: 200px;
+  height: 200px;
+  display: block;
+}
+
+.replay__kind {
+  display: block;
+  font: 400 24px / 1.1 var(--display);
+  text-transform: uppercase;
+  margin: 6px 0;
+}
+
+.replay__note {
+  margin-top: 8px;
+  color: var(--muted);
+  font: 12px var(--mono);
+}
+
+@media (max-width: 640px) {
+  .replay {
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .replay__canvas {
+    width: 140px;
+    height: 140px;
+  }
+}
+
 .unlock {
   margin-top: 12px;
   padding: 8px 12px;
@@ -2415,7 +2457,7 @@ p {
   }
 
   .hud--fight .callout__text {
-    font-size: clamp(30px, 11vw, 64px);
+    font-size: clamp(26px, 8.6vw, 64px); /* «ОСТАНОВЛЕН» целиком в одну строку */
     text-shadow: 4px 4px 0 var(--red);
   }
 

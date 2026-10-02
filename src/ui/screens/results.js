@@ -9,6 +9,7 @@ import { earn, WIN_REWARD, gloveById, grant } from '../../game/shop.js';
 import { countQuick, applyResult, rankOf, winsToNext, TOP } from '../../game/ranked.js';
 import { rankBadge } from '../rank.js';
 import { isNewbie } from '../../game/progress.js';
+import { PunchReplay } from '../replay.js';
 
 const pct = (x) => (x == null ? '—' : `${Math.round(x * 100)}%`);
 
@@ -76,6 +77,7 @@ export class ResultsScreen extends Screen {
     };
 
     const stat = (value, label) => h('div.stat', h('b', value), h('span', label));
+    this.replay = params.best ? new PunchReplay(params.best) : null;
     const kinds = Object.entries(report.kinds).filter(([, k]) => k.thrown > 0);
 
     this.mount(
@@ -108,6 +110,7 @@ export class ResultsScreen extends Screen {
           h(
             'div',
             { style: { display: 'grid', gap: '26px', alignContent: 'start' } },
+            this.replay?.el ?? null,
             h(
               'div.stats',
               stat(`${report.landed}/${report.thrown}`, 'удары в цель'),
@@ -163,6 +166,10 @@ export class ResultsScreen extends Screen {
         this.linkGone = true;
       });
     }
+  }
+
+  frame(now, dt) {
+    this.replay?.draw(dt);
   }
 
   #rematch() {
